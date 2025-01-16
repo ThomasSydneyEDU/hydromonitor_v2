@@ -14,46 +14,22 @@ class HydroponicsGUI:
         self.root = root
         self.arduino = arduino
         self.root.title("Hydroponics System Control")
+        self.root.geometry("800x480")  # Set resolution to match Raspberry Pi touchscreen
         self.root.attributes("-fullscreen", True)  # Enable fullscreen mode
 
         # Main frame to organize layout
         self.main_frame = tk.Frame(self.root)
         self.main_frame.pack(fill=tk.BOTH, expand=True)
 
-        # Left frame for time, schedule toggle, and feedback
-        self.left_frame = tk.Frame(self.main_frame, padx=20, pady=20)
+        # Left frame for manual controls (switches and lights)
+        self.left_frame = tk.Frame(self.main_frame, width=400, padx=20, pady=20)
         self.left_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
-        # Right frame for switches and lights
-        self.right_frame = tk.Frame(self.main_frame, padx=20, pady=20)
+        # Right frame for time, schedule toggle, and feedback
+        self.right_frame = tk.Frame(self.main_frame, width=400, padx=20, pady=20)
         self.right_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
 
-        # Time display
-        self.clock_label = tk.Label(self.left_frame, text="", font=("Helvetica", 32))
-        self.clock_label.pack(pady=20)
-
-        # Schedule toggle
-        self.schedule_enabled = tk.BooleanVar(value=True)
-        self.schedule_toggle = tk.Checkbutton(
-            self.left_frame,
-            text="Enable Schedule",
-            font=("Helvetica", 20),
-            variable=self.schedule_enabled,
-            pady=20,
-        )
-        self.schedule_toggle.pack()
-
-        # Feedback display
-        self.feedback_label = tk.Label(
-            self.left_frame,
-            text="Feedback: Waiting for Arduino...",
-            font=("Helvetica", 16),
-            wraplength=400,
-            justify="left",
-        )
-        self.feedback_label.pack(pady=20)
-
-        # Create switches on the right side
+        # Manual controls on the left
         self.states = {
             "lights_top": False,
             "lights_bottom": False,
@@ -68,6 +44,31 @@ class HydroponicsGUI:
         # Reset button
         self.create_reset_button()
 
+        # Time display on the right
+        self.clock_label = tk.Label(self.right_frame, text="", font=("Helvetica", 24))
+        self.clock_label.pack(pady=20, anchor="center")
+
+        # Schedule toggle
+        self.schedule_enabled = tk.BooleanVar(value=True)
+        self.schedule_toggle = tk.Checkbutton(
+            self.right_frame,
+            text="Enable Schedule",
+            font=("Helvetica", 20),
+            variable=self.schedule_enabled,
+            pady=20,
+        )
+        self.schedule_toggle.pack(anchor="center")
+
+        # Feedback display
+        self.feedback_label = tk.Label(
+            self.right_frame,
+            text="Feedback: Waiting for Arduino...",
+            font=("Helvetica", 16),
+            wraplength=380,
+            justify="left",
+        )
+        self.feedback_label.pack(pady=20, anchor="center")
+
         # Start clock, feedback updates, and schedule execution
         self.update_clock()
         self.start_feedback_listener()
@@ -79,28 +80,28 @@ class HydroponicsGUI:
 
     def create_switch(self, label_text, row, state_key, device_code):
         """Create a switch with a light indicator."""
-        label = tk.Label(self.right_frame, text=label_text, font=("Helvetica", 20))
+        label = tk.Label(self.left_frame, text=label_text, font=("Helvetica", 18))
         label.grid(row=row, column=0, padx=10, pady=10, sticky="w")
         button = tk.Button(
-            self.right_frame,
+            self.left_frame,
             text="OFF",
-            font=("Helvetica", 20),
+            font=("Helvetica", 18),
             bg="darkgrey",
             fg="white",
             width=10,
             command=lambda: self.toggle_state(state_key, button, light, device_code),
         )
         button.grid(row=row, column=1, padx=10, pady=10)
-        light = tk.Canvas(self.right_frame, width=30, height=30, bg="red", highlightthickness=0)
+        light = tk.Canvas(self.left_frame, width=30, height=30, bg="red", highlightthickness=0)
         light.grid(row=row, column=2, padx=10, pady=10)
         self.states[state_key] = {"state": False, "button": button, "light": light, "device_code": device_code}
 
     def create_reset_button(self):
         """Create a reset button to turn off all switches."""
         reset_button = tk.Button(
-            self.right_frame,
+            self.left_frame,
             text="Reset All",
-            font=("Helvetica", 20),
+            font=("Helvetica", 18),
             bg="red",
             fg="white",
             width=15,

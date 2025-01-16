@@ -59,7 +59,7 @@ class HydroponicsGUI:
 
 # Run the GUI
 if __name__ == "__main__":
-    serial_port = "/dev/ttyUSB0"  # Update with your Arduino's USB port
+    serial_port = "/dev/ttyACM0"  # Update with your Arduino's USB port
     root = tk.Tk()
     app = HydroponicsGUI(root, serial_port)
     root.mainloop()

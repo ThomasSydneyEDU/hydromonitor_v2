@@ -5,7 +5,7 @@ REPO_DIR="hydromonitor_v2"       # Directory where your repository is cloned
 VENV_DIR="$REPO_DIR/venv"        # Path to the virtual environment
 REPO_URL="https://github.com/ThomasSydneyEDU/hydromonitor_v2.git"
 REQUIREMENTS_FILE="$REPO_DIR/requirements.txt"
-SCRIPT_NAME="hydroponics_gui.py" # Main script to run
+SCRIPT_NAME="pi_pumpAndLightcontrol.py" # Main script to run
 
 echo "==== Hydro Monitor Script ===="
 

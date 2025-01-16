@@ -1,23 +1,17 @@
 #!/bin/bash
 
 # Define variables
-REPO_DIR="hydromonitor_v2"       # Directory where your repository is cloned
-VENV_DIR="$REPO_DIR/venv"        # Path to the virtual environment
-REPO_URL="https://github.com/ThomasSydneyEDU/hydromonitor_v2.git"
-REQUIREMENTS_FILE="$REPO_DIR/requirements.txt"
-SCRIPT_NAME="pi_pumpAndLightcontrol.py" # Updated main script name
+CODE_DIR="pi_code"               # Directory containing Python code and virtual environment
+VENV_DIR="$CODE_DIR/venv"        # Path to the virtual environment
+REQUIREMENTS_FILE="$CODE_DIR/requirements.txt"
+SCRIPT_NAME="pi_pumpAndLightcontrol.py" # Main Python script name
 
 echo "==== Hydro Monitor Script ===="
 
-# Check if the repository directory exists
-if [ ! -d "$REPO_DIR" ]; then
-    echo "Repository not found. Cloning from GitHub..."
-    git clone "$REPO_URL"
-else
-    echo "Repository found. Pulling latest changes..."
-    cd "$REPO_DIR" || exit
-    git pull origin main
-    cd ..
+# Check if the code directory exists
+if [ ! -d "$CODE_DIR" ]; then
+    echo "Error: Code directory '$CODE_DIR' not found!"
+    exit 1
 fi
 
 # Check if virtual environment exists
@@ -36,15 +30,15 @@ if [ -f "$REQUIREMENTS_FILE" ]; then
     pip install --upgrade pip
     pip install -r "$REQUIREMENTS_FILE"
 else
-    echo "No requirements.txt file found. Skipping package installation."
+    echo "No requirements.txt file found in $CODE_DIR. Skipping package installation."
 fi
 
 # Run the Python script
-if [ -f "$REPO_DIR/$SCRIPT_NAME" ]; then
+if [ -f "$CODE_DIR/$SCRIPT_NAME" ]; then
     echo "Running the main script: $SCRIPT_NAME..."
-    python "$REPO_DIR/$SCRIPT_NAME"
+    python "$CODE_DIR/$SCRIPT_NAME"
 else
-    echo "Error: $SCRIPT_NAME not found in the repository."
+    echo "Error: $SCRIPT_NAME not found in $CODE_DIR."
     deactivate
     exit 1
 fi

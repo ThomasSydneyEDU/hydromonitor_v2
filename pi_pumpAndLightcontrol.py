@@ -14,41 +14,59 @@ class HydroponicsGUI:
         self.root = root
         self.arduino = arduino
         self.root.title("Hydroponics System Control")
+        self.root.attributes("-fullscreen", True)  # Enable fullscreen mode
 
-        # Create a dictionary to manage states
+        # Main frame to organize layout
+        self.main_frame = tk.Frame(self.root)
+        self.main_frame.pack(fill=tk.BOTH, expand=True)
+
+        # Left frame for time, schedule toggle, and feedback
+        self.left_frame = tk.Frame(self.main_frame, padx=20, pady=20)
+        self.left_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        # Right frame for switches and lights
+        self.right_frame = tk.Frame(self.main_frame, padx=20, pady=20)
+        self.right_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
+
+        # Time display
+        self.clock_label = tk.Label(self.left_frame, text="", font=("Helvetica", 32))
+        self.clock_label.pack(pady=20)
+
+        # Schedule toggle
+        self.schedule_enabled = tk.BooleanVar(value=True)
+        self.schedule_toggle = tk.Checkbutton(
+            self.left_frame,
+            text="Enable Schedule",
+            font=("Helvetica", 20),
+            variable=self.schedule_enabled,
+            pady=20,
+        )
+        self.schedule_toggle.pack()
+
+        # Feedback display
+        self.feedback_label = tk.Label(
+            self.left_frame,
+            text="Feedback: Waiting for Arduino...",
+            font=("Helvetica", 16),
+            wraplength=400,
+            justify="left",
+        )
+        self.feedback_label.pack(pady=20)
+
+        # Create switches on the right side
         self.states = {
             "lights_top": False,
             "lights_bottom": False,
             "pump_top": False,
             "pump_bottom": False,
         }
-
-        # Define the layout
         self.create_switch("Lights (Top)", 0, "lights_top", "LT")
         self.create_switch("Lights (Bottom)", 1, "lights_bottom", "LB")
         self.create_switch("Pump (Top)", 2, "pump_top", "PT")
         self.create_switch("Pump (Bottom)", 3, "pump_bottom", "PB")
 
-        # Add schedule toggle button
-        self.schedule_enabled = tk.BooleanVar(value=True)
-        schedule_toggle = tk.Checkbutton(
-            self.root,
-            text="Enable Schedule",
-            font=("Helvetica", 14),
-            variable=self.schedule_enabled,
-        )
-        schedule_toggle.grid(row=4, column=0, columnspan=3, pady=10)
-
-        # Add reset button
+        # Reset button
         self.create_reset_button()
-
-        # Add real-time clock
-        self.clock_label = tk.Label(self.root, text="", font=("Helvetica", 14))
-        self.clock_label.grid(row=5, column=0, columnspan=3, pady=10)
-
-        # Add feedback area
-        self.feedback_label = tk.Label(self.root, text="Feedback: Waiting for Arduino...", font=("Helvetica", 12), wraplength=400, justify="left")
-        self.feedback_label.grid(row=6, column=0, columnspan=3, pady=10)
 
         # Start clock, feedback updates, and schedule execution
         self.update_clock()
@@ -61,34 +79,34 @@ class HydroponicsGUI:
 
     def create_switch(self, label_text, row, state_key, device_code):
         """Create a switch with a light indicator."""
-        label = tk.Label(self.root, text=label_text, font=("Helvetica", 14))
+        label = tk.Label(self.right_frame, text=label_text, font=("Helvetica", 20))
         label.grid(row=row, column=0, padx=10, pady=10, sticky="w")
         button = tk.Button(
-            self.root,
+            self.right_frame,
             text="OFF",
-            font=("Helvetica", 14),
+            font=("Helvetica", 20),
             bg="darkgrey",
             fg="white",
             width=10,
             command=lambda: self.toggle_state(state_key, button, light, device_code),
         )
         button.grid(row=row, column=1, padx=10, pady=10)
-        light = tk.Canvas(self.root, width=20, height=20, bg="red", highlightthickness=0)
+        light = tk.Canvas(self.right_frame, width=30, height=30, bg="red", highlightthickness=0)
         light.grid(row=row, column=2, padx=10, pady=10)
         self.states[state_key] = {"state": False, "button": button, "light": light, "device_code": device_code}
 
     def create_reset_button(self):
         """Create a reset button to turn off all switches."""
         reset_button = tk.Button(
-            self.root,
+            self.right_frame,
             text="Reset All",
-            font=("Helvetica", 14),
+            font=("Helvetica", 20),
             bg="red",
             fg="white",
-            width=20,
+            width=15,
             command=self.reset_all_switches,
         )
-        reset_button.grid(row=3, column=0, columnspan=3, pady=10)
+        reset_button.grid(row=4, column=0, columnspan=3, pady=20)
 
     def toggle_state(self, state_key, button, light, device_code):
         """Toggle the state, update the button and light, and send a command to the Arduino."""

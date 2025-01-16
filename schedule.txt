@@ -1,0 +1,9 @@
+# Schedule Format: DEVICE START_TIME DURATION
+# DEVICE: LT, LB, PT, PB (e.g., Lights Top, Lights Bottom, Pump Top, Pump Bottom)
+# START_TIME: HH:MM (24-hour format)
+# DURATION: Duration in seconds
+
+LT 09:00 300
+LB 09:00 300
+PT 09:00 300
+PB 09:00 300

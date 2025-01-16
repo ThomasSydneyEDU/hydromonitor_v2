@@ -2,6 +2,7 @@ import tkinter as tk
 import serial
 import time
 import threading
+from datetime import datetime, timedelta
 
 # Define serial port and baud rate
 SERIAL_PORT = "/dev/ttyACM0"  # Arduino port
@@ -28,6 +29,16 @@ class HydroponicsGUI:
         self.create_switch("Pump (Top)", 2, "pump_top", "PT")
         self.create_switch("Pump (Bottom)", 3, "pump_bottom", "PB")
 
+        # Add schedule toggle button
+        self.schedule_enabled = tk.BooleanVar(value=True)
+        schedule_toggle = tk.Checkbutton(
+            self.root,
+            text="Enable Schedule",
+            font=("Helvetica", 14),
+            variable=self.schedule_enabled,
+        )
+        schedule_toggle.grid(row=4, column=0, columnspan=3, pady=10)
+
         # Add reset button
         self.create_reset_button()
 
@@ -39,20 +50,19 @@ class HydroponicsGUI:
         self.feedback_label = tk.Label(self.root, text="Feedback: Waiting for Arduino...", font=("Helvetica", 12), wraplength=400, justify="left")
         self.feedback_label.grid(row=6, column=0, columnspan=3, pady=10)
 
-        # Start clock and feedback updates
+        # Start clock, feedback updates, and schedule execution
         self.update_clock()
         self.start_feedback_listener()
+        self.load_schedule()
+        self.start_schedule_execution()
 
         # Ensure all switches are OFF at startup
         self.initialize_switches()
 
     def create_switch(self, label_text, row, state_key, device_code):
         """Create a switch with a light indicator."""
-        # Label for the switch
         label = tk.Label(self.root, text=label_text, font=("Helvetica", 14))
         label.grid(row=row, column=0, padx=10, pady=10, sticky="w")
-
-        # Button to toggle the state
         button = tk.Button(
             self.root,
             text="OFF",
@@ -63,18 +73,9 @@ class HydroponicsGUI:
             command=lambda: self.toggle_state(state_key, button, light, device_code),
         )
         button.grid(row=row, column=1, padx=10, pady=10)
-
-        # Light indicator
         light = tk.Canvas(self.root, width=20, height=20, bg="red", highlightthickness=0)
         light.grid(row=row, column=2, padx=10, pady=10)
-
-        # Store the button and light widgets for future updates
-        self.states[state_key] = {
-            "state": False,
-            "button": button,
-            "light": light,
-            "device_code": device_code,
-        }
+        self.states[state_key] = {"state": False, "button": button, "light": light, "device_code": device_code}
 
     def create_reset_button(self):
         """Create a reset button to turn off all switches."""
@@ -87,13 +88,12 @@ class HydroponicsGUI:
             width=20,
             command=self.reset_all_switches,
         )
-        reset_button.grid(row=4, column=0, columnspan=3, pady=10)
+        reset_button.grid(row=3, column=0, columnspan=3, pady=10)
 
     def toggle_state(self, state_key, button, light, device_code):
         """Toggle the state, update the button and light, and send a command to the Arduino."""
         current_state = not self.states[state_key]["state"]
         self.states[state_key]["state"] = current_state
-
         if current_state:
             button.config(text="ON", bg="darkgreen")
             light.config(bg="green")
@@ -149,6 +149,39 @@ class HydroponicsGUI:
                 print(f"Error reading from Arduino: {e}")
                 self.feedback_label.config(text=f"Error: {e}")
                 break
+
+    def load_schedule(self):
+        """Load the schedule from a file."""
+        self.schedule = []
+        try:
+            with open("schedule.txt", "r") as file:
+                for line in file:
+                    if line.strip() and not line.startswith("#"):
+                        device, start_time, duration = line.split()
+                        self.schedule.append({
+                            "device": device,
+                            "start_time": datetime.strptime(start_time, "%H:%M").time(),
+                            "duration": int(duration),
+                        })
+            print("Schedule loaded successfully.")
+        except Exception as e:
+            print(f"Error loading schedule: {e}")
+            self.feedback_label.config(text="Error: Could not load schedule.")
+
+    def start_schedule_execution(self):
+        """Start a thread to execute the schedule."""
+        def run_schedule():
+            while True:
+                if self.schedule_enabled.get():
+                    now = datetime.now().time()
+                    for task in self.schedule:
+                        if task["start_time"].hour == now.hour and task["start_time"].minute == now.minute:
+                            self.send_command(task["device"], "ON")
+                            time.sleep(task["duration"])
+                            self.send_command(task["device"], "OFF")
+                time.sleep(1)
+
+        threading.Thread(target=run_schedule, daemon=True).start()
 
 
 def main():

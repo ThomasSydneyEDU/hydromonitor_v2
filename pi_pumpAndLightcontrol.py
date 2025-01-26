@@ -5,7 +5,7 @@ import threading
 from datetime import datetime
 
 # Define serial port and baud rate
-SERIAL_PORT = "/dev/ttyACM0"  # Arduino port
+SERIAL_PORT = "/dev/ttyACM0"  # Adjust if needed
 BAUD_RATE = 9600
 
 class HydroponicsGUI:
@@ -138,9 +138,11 @@ class HydroponicsGUI:
         def fetch_temperature():
             try:
                 self.arduino.write(b"GET_TEMP\n")
+                print("Sent command: GET_TEMP")
                 time.sleep(1)  # Wait for Arduino to respond
                 if self.arduino.in_waiting > 0:
                     response = self.arduino.readline().decode().strip()
+                    print(f"Arduino response: {response}")  # Debugging output
                     if response.startswith("Temperature: "):
                         temp_data = response.replace("Temperature: ", "").split(" | ")
                         self.temperature_label.config(text=f"Temperature: {temp_data[0]} | {temp_data[1]}")
@@ -154,7 +156,7 @@ class HydroponicsGUI:
 def main():
     # Connect to Arduino
     try:
-        arduino = serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=1)
+        arduino = serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=2)
         time.sleep(2)  # Wait for the Arduino to initialize
         print("Connected to Arduino.")
     except Exception as e:

@@ -2,12 +2,11 @@ import tkinter as tk
 import serial
 import time
 import threading
-from datetime import datetime, timedelta
+from datetime import datetime
 
 # Define serial port and baud rate
 SERIAL_PORT = "/dev/ttyACM0"  # Arduino port
 BAUD_RATE = 9600
-
 
 class HydroponicsGUI:
     def __init__(self, root, arduino):
@@ -25,7 +24,7 @@ class HydroponicsGUI:
         self.left_frame = tk.Frame(self.main_frame, width=400, padx=20, pady=20)
         self.left_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
-        # Right frame for time, schedule toggle, and feedback
+        # Right frame for time, schedule toggle, and temperature
         self.right_frame = tk.Frame(self.main_frame, width=400, padx=20, pady=20)
         self.right_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
 
@@ -48,32 +47,15 @@ class HydroponicsGUI:
         self.clock_label = tk.Label(self.right_frame, text="", font=("Helvetica", 24))
         self.clock_label.pack(pady=20, anchor="center")
 
-        # Schedule toggle
-        self.schedule_enabled = tk.BooleanVar(value=True)
-        self.schedule_toggle = tk.Checkbutton(
-            self.right_frame,
-            text="Enable Schedule",
-            font=("Helvetica", 20),
-            variable=self.schedule_enabled,
-            pady=20,
+        # Temperature display
+        self.temperature_label = tk.Label(
+            self.right_frame, text="Temperature: -- °C | -- °F", font=("Helvetica", 20)
         )
-        self.schedule_toggle.pack(anchor="center")
+        self.temperature_label.pack(pady=20, anchor="center")
 
-        # Feedback display
-        self.feedback_label = tk.Label(
-            self.right_frame,
-            text="Feedback: Waiting for Arduino...",
-            font=("Helvetica", 16),
-            wraplength=380,
-            justify="left",
-        )
-        self.feedback_label.pack(pady=20, anchor="center")
-
-        # Start clock, feedback updates, and schedule execution
+        # Start clock and temperature updates
         self.update_clock()
-        self.start_feedback_listener()
-        self.load_schedule()
-        self.start_schedule_execution()
+        self.update_temperature()
 
         # Ensure all switches are OFF at startup
         self.initialize_switches()
@@ -130,7 +112,6 @@ class HydroponicsGUI:
             self.arduino.write(command.encode())
         except Exception as e:
             print(f"Error sending command to Arduino: {e}")
-            self.feedback_label.config(text=f"Error: {e}")
 
     def initialize_switches(self):
         """Ensure all switches are OFF at startup."""
@@ -152,55 +133,22 @@ class HydroponicsGUI:
         self.clock_label.config(text=f"Current Time: {current_time}")
         self.root.after(1000, self.update_clock)
 
-    def start_feedback_listener(self):
-        """Start a thread to listen for Arduino feedback."""
-        threading.Thread(target=self.listen_to_arduino, daemon=True).start()
-
-    def listen_to_arduino(self):
-        """Listen for feedback from the Arduino."""
-        while True:
+    def update_temperature(self):
+        """Request and update the temperature every 30 seconds."""
+        def fetch_temperature():
             try:
+                self.arduino.write(b"GET_TEMP\n")
+                time.sleep(1)  # Wait for Arduino to respond
                 if self.arduino.in_waiting > 0:
-                    feedback = self.arduino.readline().decode().strip()
-                    print(f"Arduino feedback: {feedback}")
-                    self.feedback_label.config(text=f"Feedback: {feedback}")
+                    response = self.arduino.readline().decode().strip()
+                    if response.startswith("Temperature: "):
+                        temp_data = response.replace("Temperature: ", "").split(" | ")
+                        self.temperature_label.config(text=f"Temperature: {temp_data[0]} | {temp_data[1]}")
             except Exception as e:
-                print(f"Error reading from Arduino: {e}")
-                self.feedback_label.config(text=f"Error: {e}")
-                break
+                print(f"Error fetching temperature: {e}")
 
-    def load_schedule(self):
-        """Load the schedule from a file."""
-        self.schedule = []
-        try:
-            with open("schedule.txt", "r") as file:
-                for line in file:
-                    if line.strip() and not line.startswith("#"):
-                        device, start_time, duration = line.split()
-                        self.schedule.append({
-                            "device": device,
-                            "start_time": datetime.strptime(start_time, "%H:%M").time(),
-                            "duration": int(duration),
-                        })
-            print("Schedule loaded successfully.")
-        except Exception as e:
-            print(f"Error loading schedule: {e}")
-            self.feedback_label.config(text="Error: Could not load schedule.")
-
-    def start_schedule_execution(self):
-        """Start a thread to execute the schedule."""
-        def run_schedule():
-            while True:
-                if self.schedule_enabled.get():
-                    now = datetime.now().time()
-                    for task in self.schedule:
-                        if task["start_time"].hour == now.hour and task["start_time"].minute == now.minute:
-                            self.send_command(task["device"], "ON")
-                            time.sleep(task["duration"])
-                            self.send_command(task["device"], "OFF")
-                time.sleep(1)
-
-        threading.Thread(target=run_schedule, daemon=True).start()
+        threading.Thread(target=fetch_temperature, daemon=True).start()
+        self.root.after(30000, self.update_temperature)  # Schedule next update in 30 seconds
 
 
 def main():

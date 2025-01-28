@@ -3,6 +3,7 @@ from datetime import datetime
 import time
 from arduino_helpers import send_command_to_arduino
 
+
 def create_switch(gui_instance, label_text, row, state_key, device_code):
     """Create a switch with a light indicator."""
     label = tk.Label(gui_instance.left_frame, text=label_text, font=("Helvetica", 18))

@@ -4,7 +4,7 @@
 CODE_DIR="pi_code"               # Directory containing Python code and virtual environment
 VENV_DIR="$CODE_DIR/venv"        # Path to the virtual environment
 REQUIREMENTS_FILE="$CODE_DIR/requirements.txt"
-SCRIPT_NAME="pi_pumpAndLightcontrol.py" # Main Python script name
+SCRIPT_NAME="hydroponics_gui.py" # Main Python script name
 
 echo "==== Hydro Monitor Script ===="
 

@@ -1,6 +1,7 @@
 import tkinter as tk
 from datetime import datetime
 import time
+from arduino_helpers import send_command_to_arduino
 
 def create_switch(gui_instance, label_text, row, state_key, device_code):
     """Create a switch with a light indicator."""
@@ -35,12 +36,16 @@ def toggle_state(gui_instance, state_key, button, light, device_code):
         button.config(text="ON", bg="darkgreen")
         light.delete("all")
         light.create_oval(2, 2, 18, 18, fill="green")
-        gui_instance.send_command(device_code, "ON")
+        command = f"{device_code}:ON\n"
+        print(f"Toggle ON for {device_code}. Command: {command.strip()}")
+        send_command_to_arduino(gui_instance.arduino, command)
     else:
         button.config(text="OFF", bg="darkgrey")
         light.delete("all")
         light.create_oval(2, 2, 18, 18, fill="red")
-        gui_instance.send_command(device_code, "OFF")
+        command = f"{device_code}:OFF\n"
+        print(f"Toggle OFF for {device_code}. Command: {command.strip()}")
+        send_command_to_arduino(gui_instance.arduino, command)
 
 def create_reset_button(gui_instance):
     """Create a reset button to turn off all switches."""

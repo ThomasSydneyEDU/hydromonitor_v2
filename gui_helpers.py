@@ -1,8 +1,8 @@
 import tkinter as tk
-from datetime import datetime
+from datetime import datetime, timedelta
+import threading
 import time
 from arduino_helpers import send_command_to_arduino
-
 
 def create_switch(gui_instance, label_text, row, state_key, device_code):
     """Create a switch with a light indicator."""
@@ -24,9 +24,13 @@ def create_switch(gui_instance, label_text, row, state_key, device_code):
     light.grid(row=row, column=2, padx=10, pady=10)
     light.create_oval(2, 2, 18, 18, fill="red")
 
+    description_label = tk.Label(gui_instance.left_frame, text="", font=("Helvetica", 12), fg="gray")
+    description_label.grid(row=row + 1, column=0, columnspan=3, sticky="w")
+
     gui_instance.states[state_key]["button"] = button
     gui_instance.states[state_key]["light"] = light
     gui_instance.states[state_key]["device_code"] = device_code
+    gui_instance.states[state_key]["description_label"] = description_label
 
 def toggle_state(gui_instance, state_key, button, light, device_code):
     """Toggle the state, update the button and light, and send a command to the Arduino."""
@@ -93,3 +97,27 @@ def update_connection_status(gui_instance):
         gui_instance.root.after(1000, check_connection)
 
     check_connection()
+
+def load_schedule(gui_instance):
+    """Load schedule from file and update switch descriptions."""
+    try:
+        with open("schedule.txt", "r") as file:
+            for line in file:
+                if line.strip() and not line.startswith("#"):
+                    parts = line.split(maxsplit=3)
+                    if len(parts) == 4:
+                        device, start_time, duration, description = parts
+                        if device in ["LT", "LB", "PT", "PB"]:
+                            gui_instance.states[device.lower()]["schedule"] = description.strip()
+                            if gui_instance.schedule_enabled.get():
+                                gui_instance.states[device.lower()]["description_label"].config(text=description.strip())
+    except Exception as e:
+        print(f"Error loading schedule: {e}")
+
+def update_schedule_visibility(gui_instance):
+    """Show or hide schedule descriptions based on the toggle."""
+    for state_key, info in gui_instance.states.items():
+        if gui_instance.schedule_enabled.get():
+            info["description_label"].config(text=info.get("schedule", ""))
+        else:
+            info["description_label"].config(text="")

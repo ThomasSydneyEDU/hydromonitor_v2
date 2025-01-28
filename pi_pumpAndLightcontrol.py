@@ -4,6 +4,8 @@ from gui_helpers import (
     create_reset_button,
     update_clock,
     update_connection_status,
+    load_schedule,
+    update_schedule_visibility,
 )
 from arduino_helpers import connect_to_arduino, send_command_to_arduino
 
@@ -42,10 +44,10 @@ class HydroponicsGUI:
 
         # Manual controls on the left
         self.states = {
-            "lights_top": {"state": False},
-            "lights_bottom": {"state": False},
-            "pump_top": {"state": False},
-            "pump_bottom": {"state": False},
+            "lights_top": {"state": False, "schedule": "", "description_label": None},
+            "lights_bottom": {"state": False, "schedule": "", "description_label": None},
+            "pump_top": {"state": False, "schedule": "", "description_label": None},
+            "pump_bottom": {"state": False, "schedule": "", "description_label": None},
         }
         create_switch(self, "Lights (Top)", 0, "lights_top", "LT")
         create_switch(self, "Lights (Bottom)", 1, "lights_bottom", "LB")
@@ -55,8 +57,23 @@ class HydroponicsGUI:
         # Reset button
         create_reset_button(self)
 
+        # Schedule toggle
+        self.schedule_enabled = tk.BooleanVar(value=True)
+        schedule_toggle = tk.Checkbutton(
+            self.left_frame,
+            text="Schedule On",
+            font=("Helvetica", 16),
+            variable=self.schedule_enabled,
+            pady=10,
+            command=lambda: update_schedule_visibility(self),
+        )
+        schedule_toggle.grid(row=5, column=0, columnspan=3)
+
         # Start clock
         update_clock(self)
+
+        # Load and apply the schedule
+        load_schedule(self)
 
         # Ensure all switches are OFF at startup
         self.initialize_switches()

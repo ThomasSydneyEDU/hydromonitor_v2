@@ -4,10 +4,9 @@ from gui_helpers import (
     create_reset_button,
     update_clock,
     update_connection_status,
-    load_schedule,
-    update_schedule_visibility,
 )
 from arduino_helpers import connect_to_arduino, send_command_to_arduino
+from datetime import datetime
 
 class HydroponicsGUI:
     def __init__(self, root, arduino):
@@ -44,55 +43,39 @@ class HydroponicsGUI:
 
         # Manual controls on the left
         self.states = {
-            "lights_top": {"state": False, "schedule": "", "description_label": None},
-            "lights_bottom": {"state": False, "schedule": "", "description_label": None},
-            "pump_top": {"state": False, "schedule": "", "description_label": None},
-            "pump_bottom": {"state": False, "schedule": "", "description_label": None},
+            "lights_top": {"state": False},
+            "lights_bottom": {"state": False},
+            "pump_top": {"state": False},
+            "pump_bottom": {"state": False},
         }
         create_switch(self, "Lights (Top)", 0, "lights_top", "LT")
         create_switch(self, "Lights (Bottom)", 1, "lights_bottom", "LB")
         create_switch(self, "Pump (Top)", 2, "pump_top", "PT")
         create_switch(self, "Pump (Bottom)", 3, "pump_bottom", "PB")
 
-        # Reset button
+        # Reset button (tells Arduino to resume its schedule)
         create_reset_button(self)
-
-        # Schedule toggle
-        self.schedule_enabled = tk.BooleanVar(value=True)
-        schedule_toggle = tk.Checkbutton(
-            self.left_frame,
-            text="Schedule On",
-            font=("Helvetica", 16),
-            variable=self.schedule_enabled,
-            pady=10,
-            command=lambda: update_schedule_visibility(self),
-        )
-        schedule_toggle.grid(row=5, column=0, columnspan=3)
 
         # Start clock
         update_clock(self)
 
-        # Load and apply the schedule
-        load_schedule(self)
-
-        # Ensure all switches are OFF at startup
-        self.initialize_switches()
-
-    def initialize_switches(self):
-        """Ensure all switches are OFF at startup."""
-        print("Initializing all switches to OFF...")
-        for state_key, info in self.states.items():
-            info["state"] = False
-            info["button"].config(text="OFF", bg="darkgrey")
-            info["light"].delete("all")
-            info["light"].create_oval(2, 2, 18, 18, fill="red")
-            send_command_to_arduino(self.arduino, f"{info['device_code']}:OFF\n")
+        # Send time to Arduino
+        self.set_time_on_arduino()
 
     def reset_all_switches(self):
-        """Turn all switches off."""
-        print("Resetting all switches to OFF...")
-        self.initialize_switches()
+        """Reset all devices to follow Arduino’s schedule."""
+        print("Resetting to Arduino schedule...")
+        send_command_to_arduino(self.arduino, "RESET_SCHEDULE\n")
 
+    def set_time_on_arduino(self):
+        """Send the current system time to the Arduino."""
+        if self.arduino:
+            try:
+                current_time = datetime.now().strftime("%H:%M:%S")
+                print(f"Sending time to Arduino: {current_time}")
+                send_command_to_arduino(self.arduino, f"SET_TIME:{current_time}\n")
+            except Exception as e:
+                print(f"Error sending time to Arduino: {e}")
 
 def main():
     arduino = connect_to_arduino("/dev/ttyACM0", 9600)

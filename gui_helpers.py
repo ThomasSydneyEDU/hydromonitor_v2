@@ -74,29 +74,30 @@ def update_clock(gui_instance):
 
     refresh_time()
 
-def update_connection_status(gui_instance):
+def update_connection_status(gui):
     """Update the Arduino connection indicator every second."""
-    def check_connection():
-        if gui_instance.arduino:
+    def check_arduino():
+        if gui.arduino:
             try:
-                gui_instance.arduino.write(b"PING\n")
-                time.sleep(0.1)  # Allow time for Arduino to respond
-                if gui_instance.arduino.in_waiting > 0:
-                    gui_instance.connection_indicator.delete("all")
-                    gui_instance.connection_indicator.create_oval(2, 2, 18, 18, fill="green")
-                else:
-                    gui_instance.connection_indicator.delete("all")
-                    gui_instance.connection_indicator.create_oval(2, 2, 18, 18, fill="red")
+                gui.arduino.write(b"PING\n")  # Send a test command
+                gui.arduino.flush()  # Ensure it's sent
+                time.sleep(0.1)  # Allow time for a response
+
+                if gui.arduino.in_waiting > 0:
+                    response = gui.arduino.readline().decode().strip()
+                    if response == "PING_OK":
+                        gui.connection_indicator.delete("all")
+                        gui.connection_indicator.create_oval(2, 2, 18, 18, fill="green")  # ✅ Turn GREEN
+                        return
+
             except Exception:
-                gui_instance.connection_indicator.delete("all")
-                gui_instance.connection_indicator.create_oval(2, 2, 18, 18, fill="red")
-        else:
-            gui_instance.connection_indicator.delete("all")
-            gui_instance.connection_indicator.create_oval(2, 2, 18, 18, fill="red")
+                pass
 
-        gui_instance.root.after(1000, check_connection)
+        gui.connection_indicator.delete("all")
+        gui.connection_indicator.create_oval(2, 2, 18, 18, fill="red")  # ❌ Stay RED
+        gui.root.after(1000, check_arduino)  # Repeat every second
 
-    check_connection()
+    check_arduino()
 
 def load_schedule(gui_instance):
     """Load schedule from file and update switch descriptions."""

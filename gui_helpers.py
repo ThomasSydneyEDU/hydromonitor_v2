@@ -53,17 +53,23 @@ def toggle_state(gui_instance, state_key, button, light, device_code):
         send_command_to_arduino(gui_instance.arduino, command)
 
 def create_reset_button(gui):
-    """Create a reset button that tells the Arduino to follow its schedule."""
+    """Create a reset button to turn off manual overrides and resume the schedule."""
     reset_button = tk.Button(
         gui.left_frame,
         text="Reset to Schedule",
-        font=("Helvetica", 18),
+        font=("Helvetica", 16),
         bg="blue",
         fg="white",
-        width=20,
-        command=gui.reset_to_arduino_schedule,  # ✅ FIXED: Call the correct function
+        width=15,
+        command=lambda: reset_schedule(gui)
     )
-    reset_button.grid(row=9, column=0, columnspan=3, pady=20)
+    reset_button.grid(row=6, column=0, columnspan=3, pady=20)
+
+def reset_schedule(gui):
+    """Send reset command to the Arduino to resume automatic scheduling."""
+    if gui.arduino:
+        gui.arduino.write(b"RESET_SCHEDULE\n")
+        print("Sent RESET_SCHEDULE to Arduino")
 
 def update_clock(gui_instance):
     """Update the clock every second."""

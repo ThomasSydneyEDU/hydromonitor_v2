@@ -3,6 +3,7 @@ import threading
 import time
 from arduino_helpers import check_arduino_connection, connect_to_arduino
 
+
 def create_switch(gui, label_text, row, state_key, device_code):
     """Create a switch with a light indicator."""
     label = tk.Label(gui.left_frame, text=label_text, font=("Helvetica", 18))
@@ -15,7 +16,7 @@ def create_switch(gui, label_text, row, state_key, device_code):
         bg="darkgrey",
         fg="white",
         width=10,
-        command=lambda: gui.toggle_state(state_key),
+        command=lambda: gui.toggle_switch(state_key),  # Call toggle_switch on GUI class
     )
     button.grid(row=row, column=1, padx=10, pady=10)
 

@@ -51,14 +51,33 @@ def update_clock(gui):
     threading.Thread(target=refresh_clock, daemon=True).start()
 
 def update_connection_status(gui):
-    """ Continuously check the Arduino connection and update the UI. """
+    """ Continuously check if the Pi is receiving state updates from the Arduino. """
     def check_connection():
+        last_state_time = time.time()
+
         while True:
-            if gui.arduino and check_arduino_connection(gui.arduino):
-                update_indicator(gui.connection_indicator, "green")
+            if gui.arduino and gui.arduino.is_open:
+                try:
+                    if gui.arduino.in_waiting > 0:
+                        response = gui.arduino.readline().decode().strip()
+                        if response.startswith("STATE:"):
+                            gui.update_relay_states(response)
+                            last_state_time = time.time()  # Reset last received time
+                        
+                    # Check if we haven't received a state update in the last 10 seconds
+                    if time.time() - last_state_time > 10:
+                        update_indicator(gui.connection_indicator, "red")
+                    else:
+                        update_indicator(gui.connection_indicator, "green")
+
+                except Exception:
+                    update_indicator(gui.connection_indicator, "red")
+                    gui.arduino = None  # Mark as disconnected
+
             else:
                 update_indicator(gui.connection_indicator, "red")
-                gui.arduino = connect_to_arduino()
+                gui.arduino = None  # Mark as disconnected
+
             time.sleep(3)  # Check every 3 seconds
 
     threading.Thread(target=check_connection, daemon=True).start()

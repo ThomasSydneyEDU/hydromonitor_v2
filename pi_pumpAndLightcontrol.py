@@ -1,5 +1,6 @@
 import tkinter as tk
 import threading
+import time
 from datetime import datetime
 from gui_helpers import (
     create_switch,
@@ -32,7 +33,6 @@ class HydroponicsGUI:
         connection_label.grid(row=0, column=0, padx=(0, 10))
         self.connection_indicator = tk.Canvas(connection_frame, width=20, height=20, highlightthickness=0)
         self.connection_indicator.grid(row=0, column=1)
-        update_connection_status(self)
 
         # Main frame for manual controls
         self.main_frame = tk.Frame(self.root)
@@ -60,26 +60,26 @@ class HydroponicsGUI:
         # Start clock
         update_clock(self)
 
-        # Try to connect to Arduino
-        self.start_arduino_connection()
+        # Start monitoring and reconnecting Arduino
+        self.monitor_arduino_connection()
 
         # Start listening for relay state updates
         self.start_relay_state_listener()
 
-    def start_arduino_connection(self):
-        """Continuously tries to connect to the Arduino if disconnected."""
-        def attempt_reconnect():
-            while self.arduino is None:
-                print("🔍 Searching for Arduino...")
-                self.arduino = connect_to_arduino()
-                if self.arduino:
-                    print("✅ Arduino connected!")
-                    self.set_time_on_arduino()  # Sync time on connection
-                else:
-                    print("🔴 No Arduino detected. Retrying in 5 seconds...")
-                    time.sleep(5)
+    def monitor_arduino_connection(self):
+        """ Periodically checks the connection and attempts reconnection if lost. """
+        def monitor_connection():
+            while True:
+                if not check_arduino_connection(self.arduino):
+                    print("🔴 Arduino disconnected! Attempting to reconnect...")
+                    self.arduino = connect_to_arduino()  # Try to reconnect
 
-        threading.Thread(target=attempt_reconnect, daemon=True).start()
+                    if self.arduino:
+                        print("✅ Arduino reconnected!")
+                        self.set_time_on_arduino()  # Resync time
+                time.sleep(5)  # Check connection every 5 seconds
+
+        threading.Thread(target=monitor_connection, daemon=True).start()
 
     def start_relay_state_listener(self):
         """ Continuously listen for state updates from the Arduino. """

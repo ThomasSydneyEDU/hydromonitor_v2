@@ -80,30 +80,40 @@ def update_clock(gui_instance):
 
     refresh_time()
 
+import time
+
 def update_connection_status(gui):
-    """Update the Arduino connection indicator every second."""
-    def check_arduino():
-        if gui.arduino:
-            try:
-                gui.arduino.write(b"PING\n")  # Send a test command
-                gui.arduino.flush()  # Ensure it's sent
-                time.sleep(0.1)  # Allow time for a response
+    """Check if the Arduino is responding and update the connection indicator."""
+    if gui.arduino:
+        try:
+            # Clear the serial buffer before sending the PING
+            gui.arduino.reset_input_buffer()
+            
+            # Send PING to Arduino
+            gui.arduino.write(b"PING\n")
+            time.sleep(0.2)  # Slight delay to allow Arduino to respond
+            
+            # Check if there's a response
+            if gui.arduino.in_waiting > 0:
+                response = gui.arduino.readline().decode().strip()
+                if response == "PING_OK":
+                    gui.connection_indicator.delete("all")
+                    gui.connection_indicator.create_oval(2, 2, 18, 18, fill="green")
+                    return
+            
+            # If no response, mark as disconnected
+            gui.connection_indicator.delete("all")
+            gui.connection_indicator.create_oval(2, 2, 18, 18, fill="red")
+        except Exception:
+            gui.connection_indicator.delete("all")
+            gui.connection_indicator.create_oval(2, 2, 18, 18, fill="red")
 
-                if gui.arduino.in_waiting > 0:
-                    response = gui.arduino.readline().decode().strip()
-                    if response == "PING_OK":
-                        gui.connection_indicator.delete("all")
-                        gui.connection_indicator.create_oval(2, 2, 18, 18, fill="green")  # ✅ Turn GREEN
-                        return
-
-            except Exception:
-                pass
-
+    else:
+        # If there's no Arduino object, mark as disconnected
         gui.connection_indicator.delete("all")
-        gui.connection_indicator.create_oval(2, 2, 18, 18, fill="red")  # ❌ Stay RED
-        gui.root.after(1000, check_arduino)  # Repeat every second
+        gui.connection_indicator.create_oval(2, 2, 18, 18, fill="red")
 
-    check_arduino()
+    gui.root.after(1000, lambda: update_connection_status(gui))  # Check again in 1 sec
 
 def load_schedule(gui_instance):
     """Load schedule from file and update switch descriptions."""

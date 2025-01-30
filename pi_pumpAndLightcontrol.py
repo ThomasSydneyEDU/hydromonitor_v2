@@ -1,18 +1,18 @@
 import tkinter as tk
+import threading
+from datetime import datetime
 from gui_helpers import (
     create_switch,
     create_reset_button,
     update_clock,
-    monitor_arduino_connection,
-    update_relay_states,
+    update_connection_status,
 )
-
-from arduino_helpers import connect_to_arduino, send_command_to_arduino, reset_to_arduino_schedule, start_relay_state_listener
+from arduino_helpers import find_arduino, send_command_to_arduino
 
 class HydroponicsGUI:
     def __init__(self, root):
         self.root = root
-        self.arduino = None  # No connection initially
+        self.arduino = find_arduino()
         self.root.title("Hydroponics System Control")
         self.root.geometry("800x480")
         self.root.attributes("-fullscreen", False)
@@ -25,9 +25,14 @@ class HydroponicsGUI:
         self.clock_label = tk.Label(self.top_frame, text="", font=("Helvetica", 24))
         self.clock_label.pack(side=tk.LEFT, padx=20)
 
-        # Arduino connection indicator
-        self.connection_indicator = tk.Canvas(self.top_frame, width=20, height=20, highlightthickness=0)
-        self.connection_indicator.pack(side=tk.RIGHT, padx=20)
+        # Arduino connection indicator with label
+        connection_frame = tk.Frame(self.top_frame)
+        connection_frame.pack(side=tk.RIGHT, padx=20)
+        connection_label = tk.Label(connection_frame, text="Arduino Connected", font=("Helvetica", 16))
+        connection_label.grid(row=0, column=0, padx=(0, 10))
+        self.connection_indicator = tk.Canvas(connection_frame, width=20, height=20, highlightthickness=0)
+        self.connection_indicator.grid(row=0, column=1)
+        update_connection_status(self)
 
         # Main frame for manual controls
         self.main_frame = tk.Frame(self.root)
@@ -49,12 +54,48 @@ class HydroponicsGUI:
         create_switch(self, "Pump (Top)", 2, "pump_top", "PT")
         create_switch(self, "Pump (Bottom)", 3, "pump_bottom", "PB")
 
+        # Reset button
         create_reset_button(self)
 
+        # Start clock
         update_clock(self)
 
-        monitor_arduino_connection(self)
-        start_relay_state_listener(self)
+        # Send time to Arduino
+        self.set_time_on_arduino()
+
+    def toggle_switch(self, key):
+        """ Toggle the state of a switch. """
+        info = self.states[key]
+        new_state = not info["state"]
+        self.states[key]["state"] = new_state
+
+        # Update button appearance
+        button = info["button"]
+        light = info["light"]
+        state_text = "ON" if new_state else "OFF"
+        color = "darkgreen" if new_state else "darkgrey"
+        light_color = "green" if new_state else "red"
+
+        button.config(text=state_text, bg=color)
+        light.delete("all")
+        light.create_oval(2, 2, 18, 18, fill=light_color)
+
+        send_command_to_arduino(self.arduino, f"{info['device_code']}:{state_text}\n")
+
+    def reset_to_arduino_schedule(self):
+        """ Reset all devices to follow Arduino’s schedule. """
+        print("Resetting to Arduino schedule...")
+        send_command_to_arduino(self.arduino, "RESET_SCHEDULE\n")
+
+    def set_time_on_arduino(self):
+        """ Send the current system time to the Arduino. """
+        if self.arduino:
+            try:
+                current_time = datetime.now().strftime("%H:%M:%S")
+                print(f"Sending time to Arduino: {current_time}")
+                send_command_to_arduino(self.arduino, f"SET_TIME:{current_time}\n")
+            except Exception as e:
+                print(f"Error sending time to Arduino: {e}")
 
 def main():
     root = tk.Tk()

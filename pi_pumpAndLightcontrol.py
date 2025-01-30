@@ -141,7 +141,7 @@ class HydroponicsGUI:
 
 
 def main():
-    arduino = connect_to_arduino("/dev/ttyACM0", 9600)
+    arduino = connect_to_arduino()
     root = tk.Tk()
     app = HydroponicsGUI(root, arduino)
     root.mainloop()

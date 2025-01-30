@@ -1,13 +1,88 @@
+Arduino Helpers
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
 import serial
 import time
-import threading
-from datetime import datetime
-
-# List of potential serial ports for the Arduino
-POSSIBLE_PORTS = ["/dev/ttyACM0", "/dev/ttyACM1", "/dev/ttyUSB0", "/dev/ttyUSB1"]
 
 def connect_to_arduino():
     """Scan available ports and attempt to connect to the Arduino."""
+    POSSIBLE_PORTS = ["/dev/ttyACM0", "/dev/ttyACM1", "/dev/ttyUSB0", "/dev/ttyUSB1"]
+    
     for port in POSSIBLE_PORTS:
         try:
             arduino = serial.Serial(port, 9600, timeout=2)
@@ -47,6 +122,7 @@ def set_time_on_arduino(arduino):
     """Send the current system time to the Arduino."""
     if arduino:
         try:
+            from datetime import datetime
             current_time = datetime.now().strftime("%H:%M:%S")
             send_command_to_arduino(arduino, f"SET_TIME:{current_time}\n")
         except Exception as e:
@@ -57,7 +133,6 @@ def reset_to_arduino_schedule(arduino):
     if not arduino:
         print("⚠ Arduino is not connected. Cannot reset schedule.")
         return
-
     print("🔄 Resetting to Arduino schedule...")
     send_command_to_arduino(arduino, "RESET_SCHEDULE\n")
     time.sleep(1)
@@ -72,25 +147,10 @@ def start_relay_state_listener(gui):
                     response = gui.arduino.readline().decode().strip()
                     if response.startswith("STATE:"):
                         gui.update_relay_states(response)
-                    elif response.startswith("PING_OK"):
-                        print("✅ Arduino connection confirmed.")
             except Exception as e:
                 print(f"⚠ Error reading state update: {e}")
                 gui.arduino = None  # Mark as disconnected
-                attempt_reconnect(gui)
                 break
-
+    import threading
     threading.Thread(target=listen_for_state, daemon=True).start()
 
-def attempt_reconnect(gui):
-    """Attempts to reconnect to the Arduino if disconnected."""
-    while gui.arduino is None:
-        print("🔄 Attempting to reconnect to Arduino...")
-        gui.arduino = connect_to_arduino()
-        if gui.arduino:
-            print("✅ Reconnected to Arduino!")
-            set_time_on_arduino(gui.arduino)  # Sync time after reconnection
-            send_command_to_arduino(gui.arduino, "GET_STATE\n")  # Request current state
-            start_relay_state_listener(gui)  # Restart listener
-        else:
-            time.sleep(5)  # Wait before retrying

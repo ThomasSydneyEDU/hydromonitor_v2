@@ -81,18 +81,38 @@ class HydroponicsGUI:
 
         threading.Thread(target=listen_for_state, daemon=True).start()
 
-    def update_relay_states(self, response):
-        """ Parse the Arduino relay state message and update GUI indicators. """
-        try:
-            _, light_top, light_bottom, pump_top, pump_bottom = response.split(":")[1].split(",")
+def update_relay_states(self, response):
+    """Parse the Arduino relay state message and update GUI indicators safely."""
+    try:
+        print(f"Received from Arduino: {response}")  # Debugging output
 
-            self.set_gui_state("lights_top", int(light_top))
-            self.set_gui_state("lights_bottom", int(light_bottom))
-            self.set_gui_state("pump_top", int(pump_top))
-            self.set_gui_state("pump_bottom", int(pump_bottom))
+        # Ignore empty responses
+        if not response.strip():
+            print("Warning: Received empty response, ignoring.")
+            return
 
-        except Exception as e:
-            print(f"Error parsing relay state: {e}")
+        # Ensure the message starts with STATE:
+        if not response.startswith("STATE:"):
+            print(f"Warning: Unexpected message format: {response}")
+            return
+
+        # Extract relay states
+        state_values = response.split(":")[1].split(",")
+
+        # Ensure we have exactly 4 values
+        if len(state_values) != 4:
+            print(f"Warning: Unexpected number of values in state update: {state_values}")
+            return
+
+        # Convert to integers and update GUI
+        light_top, light_bottom, pump_top, pump_bottom = map(int, state_values)
+        self.set_gui_state("lights_top", light_top)
+        self.set_gui_state("lights_bottom", light_bottom)
+        self.set_gui_state("pump_top", pump_top)
+        self.set_gui_state("pump_bottom", pump_bottom)
+
+    except Exception as e:
+        print(f"Error parsing relay state: {e}")
 
     def set_gui_state(self, key, state):
         """ Update button text and indicator color based on relay state. """

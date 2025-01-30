@@ -81,38 +81,29 @@ class HydroponicsGUI:
 
         threading.Thread(target=listen_for_state, daemon=True).start()
 
-def update_relay_states(self, response):
-    """Parse the Arduino relay state message and update GUI indicators safely."""
-    try:
-        print(f"Received from Arduino: {response}")  # Debugging output
+    def update_relay_states(self, response):
+        """ Parse the Arduino relay state message and update GUI indicators. """
+        try:
+            print(f"Received from Arduino: {response}")  # Debugging output
 
-        # Ignore empty responses
-        if not response.strip():
-            print("Warning: Received empty response, ignoring.")
-            return
+            if not response.startswith("STATE:"):
+                print(f"Warning: Unexpected message format: {response}")
+                return
 
-        # Ensure the message starts with STATE:
-        if not response.startswith("STATE:"):
-            print(f"Warning: Unexpected message format: {response}")
-            return
+            state_values = response.split(":")[1].split(",")
 
-        # Extract relay states
-        state_values = response.split(":")[1].split(",")
+            if len(state_values) != 4:
+                print(f"Warning: Unexpected number of values in state update: {state_values}")
+                return
 
-        # Ensure we have exactly 4 values
-        if len(state_values) != 4:
-            print(f"Warning: Unexpected number of values in state update: {state_values}")
-            return
+            light_top, light_bottom, pump_top, pump_bottom = map(int, state_values)
+            self.set_gui_state("lights_top", light_top)
+            self.set_gui_state("lights_bottom", light_bottom)
+            self.set_gui_state("pump_top", pump_top)
+            self.set_gui_state("pump_bottom", pump_bottom)
 
-        # Convert to integers and update GUI
-        light_top, light_bottom, pump_top, pump_bottom = map(int, state_values)
-        self.set_gui_state("lights_top", light_top)
-        self.set_gui_state("lights_bottom", light_bottom)
-        self.set_gui_state("pump_top", pump_top)
-        self.set_gui_state("pump_bottom", pump_bottom)
-
-    except Exception as e:
-        print(f"Error parsing relay state: {e}")
+        except Exception as e:
+            print(f"Error parsing relay state: {e}")
 
     def set_gui_state(self, key, state):
         """ Update button text and indicator color based on relay state. """
@@ -131,7 +122,7 @@ def update_relay_states(self, response):
             light.delete("all")
             light.create_oval(2, 2, 18, 18, fill="red")
 
-    def reset_all_switches(self):
+    def reset_to_arduino_schedule(self):
         """Reset all devices to follow Arduino’s schedule."""
         print("Resetting to Arduino schedule...")
         send_command_to_arduino(self.arduino, "RESET_SCHEDULE\n")

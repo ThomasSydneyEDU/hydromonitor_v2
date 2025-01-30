@@ -13,7 +13,7 @@ from arduino_helpers import connect_to_arduino, send_command_to_arduino, check_a
 class HydroponicsGUI:
     def __init__(self, root):
         self.root = root
-        self.arduino = None  # Initially, no connection
+        self.arduino = None  # No connection initially
         self.root.title("Hydroponics System Control")
         self.root.geometry("800x480")
         self.root.attributes("-fullscreen", False)
@@ -72,11 +72,13 @@ class HydroponicsGUI:
             while True:
                 if not check_arduino_connection(self.arduino):
                     print("🔴 Arduino disconnected! Attempting to reconnect...")
+                    self.set_all_indicators_off()  # Reset all indicators to off
                     self.arduino = connect_to_arduino()  # Try to reconnect
 
                     if self.arduino:
                         print("✅ Arduino reconnected!")
                         self.set_time_on_arduino()  # Resync time
+                        send_command_to_arduino(self.arduino, "GET_STATE\n")  # Request relay state update
                 time.sleep(5)  # Check connection every 5 seconds
 
         threading.Thread(target=monitor_connection, daemon=True).start()
@@ -92,10 +94,20 @@ class HydroponicsGUI:
                             self.update_relay_states(response)
                 except Exception as e:
                     print(f"Error reading state update: {e}")
+                    self.set_all_indicators_off()  # Reset indicators if Arduino disconnects
                     self.arduino = None  # Mark as disconnected
                     break  # Stop listening until a reconnection is made
 
         threading.Thread(target=listen_for_state, daemon=True).start()
+
+    def set_all_indicators_off(self):
+        """ Reset all indicators (lights, pumps, and connection) to OFF. """
+        print("🔴 Resetting all indicators to OFF (disconnected state).")
+        self.connection_indicator.delete("all")
+        self.connection_indicator.create_oval(2, 2, 18, 18, fill="red")  # Set connection light to red
+
+        for key in self.states:
+            self.set_gui_state(key, 0)  # Turn all relays off visually
 
     def update_relay_states(self, response):
         """ Parse the Arduino relay state message and update GUI indicators. """
@@ -117,6 +129,10 @@ class HydroponicsGUI:
             self.set_gui_state("lights_bottom", light_bottom)
             self.set_gui_state("pump_top", pump_top)
             self.set_gui_state("pump_bottom", pump_bottom)
+
+            # Set connection light to green if Arduino is responding
+            self.connection_indicator.delete("all")
+            self.connection_indicator.create_oval(2, 2, 18, 18, fill="green")
 
         except Exception as e:
             print(f"⚠ Error parsing relay state: {e}")

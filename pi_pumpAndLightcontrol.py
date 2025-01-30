@@ -49,7 +49,7 @@ class HydroponicsGUI:
         self.right_frame = tk.Frame(self.main_frame, width=400, padx=20, pady=20)
         self.right_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
 
-        # Temperature and Humidity Display (Separate Rows)
+        # Temperature and Humidity Display
         self.temp_frame = tk.Frame(self.right_frame)
         self.temp_frame.pack(pady=10)
 
@@ -92,6 +92,30 @@ class HydroponicsGUI:
         # Start listening for relay state updates
         self.start_relay_state_listener()
 
+    def toggle_switch(self, state_key):
+        """Toggle a device state manually and send the command to the Arduino."""
+        if state_key not in self.states:
+            print(f"⚠ Error: {state_key} not found in self.states")
+            return
+
+        info = self.states[state_key]
+        new_state = not info["state"]
+        info["state"] = new_state  # Toggle state
+
+        # Update GUI button and indicator light
+        if new_state:
+            info["button"].config(text="ON", bg="darkgreen")
+            info["light"].delete("all")
+            info["light"].create_oval(2, 2, 18, 18, fill="green")
+            send_command_to_arduino(self.arduino, f"{info['device_code']}:ON\n")
+        else:
+            info["button"].config(text="OFF", bg="darkgrey")
+            info["light"].delete("all")
+            info["light"].create_oval(2, 2, 18, 18, fill="red")
+            send_command_to_arduino(self.arduino, f"{info['device_code']}:OFF\n")
+
+        print(f"🔄 Toggled {state_key} to {'ON' if new_state else 'OFF'}")
+
     def start_relay_state_listener(self):
         """ Continuously listen for state updates from the Arduino. """
         def listen_for_state():
@@ -112,7 +136,6 @@ class HydroponicsGUI:
         try:
             print(f"📩 Received from Arduino: {response}")  # Debugging output
 
-            # Ensure the response starts with STATE:
             if not response.startswith("STATE:"):
                 print(f"⚠ Warning: Unexpected message format: {response}")
                 return

@@ -60,7 +60,7 @@ class HydroponicsGUI:
         # Start clock
         update_clock(self)
 
-        # Start monitoring and reconnecting Arduino
+        # Start monitoring Arduino connection
         self.monitor_arduino_connection()
 
         # Start listening for relay state updates
@@ -70,16 +70,30 @@ class HydroponicsGUI:
         """ Periodically checks the connection and attempts reconnection if lost. """
         def monitor_connection():
             while True:
-                if not check_arduino_connection(self.arduino):
-                    print("🔴 Arduino disconnected! Attempting to reconnect...")
-                    self.set_all_indicators_off()  # Reset all indicators to off
-                    self.arduino = connect_to_arduino()  # Try to reconnect
+                if self.arduino and check_arduino_connection(self.arduino):
+                    time.sleep(5)  # Wait before checking again
+                    continue  # Skip reconnect attempt if still connected
 
-                    if self.arduino:
-                        print("✅ Arduino reconnected!")
-                        self.set_time_on_arduino()  # Resync time
-                        send_command_to_arduino(self.arduino, "GET_STATE\n")  # Request relay state update
-                time.sleep(5)  # Check connection every 5 seconds
+                print("🔴 Arduino disconnected! Attempting to reconnect...")
+
+                # Try to reconnect
+                new_arduino = connect_to_arduino()
+
+                if new_arduino:
+                    print("✅ Arduino reconnected!")
+                    self.arduino = new_arduino  # Update connection
+                    self.set_time_on_arduino()  # Resync time
+                    send_command_to_arduino(self.arduino, "GET_STATE\n")  # Request relay state update
+
+                    # Ensure connection light updates correctly
+                    self.connection_indicator.delete("all")
+                    self.connection_indicator.create_oval(2, 2, 18, 18, fill="green")
+                else:
+                    # If still disconnected, ensure indicator is red
+                    self.connection_indicator.delete("all")
+                    self.connection_indicator.create_oval(2, 2, 18, 18, fill="red")
+
+                time.sleep(5)  # Check every 5 seconds
 
         threading.Thread(target=monitor_connection, daemon=True).start()
 
@@ -93,26 +107,16 @@ class HydroponicsGUI:
                         if response.startswith("STATE:"):
                             self.update_relay_states(response)
                 except Exception as e:
-                    print(f"Error reading state update: {e}")
-                    self.set_all_indicators_off()  # Reset indicators if Arduino disconnects
+                    print(f"⚠ Error reading state update: {e}")
                     self.arduino = None  # Mark as disconnected
                     break  # Stop listening until a reconnection is made
 
         threading.Thread(target=listen_for_state, daemon=True).start()
 
-    def set_all_indicators_off(self):
-        """ Reset all indicators (lights, pumps, and connection) to OFF. """
-        print("🔴 Resetting all indicators to OFF (disconnected state).")
-        self.connection_indicator.delete("all")
-        self.connection_indicator.create_oval(2, 2, 18, 18, fill="red")  # Set connection light to red
-
-        for key in self.states:
-            self.set_gui_state(key, 0)  # Turn all relays off visually
-
     def update_relay_states(self, response):
         """ Parse the Arduino relay state message and update GUI indicators. """
         try:
-            print(f"📩 Received from Arduino: {response}")  # Debugging output
+            print(f"📩 Received from Arduino: {response}")
 
             if not response.startswith("STATE:"):
                 print(f"⚠ Unexpected message format: {response}")

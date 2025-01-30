@@ -37,7 +37,7 @@ class HydroponicsGUI:
         # Initialize connection status check
         update_connection_status(self)
 
-        # Main frame for manual controls
+        # Main frame for manual controls and sensor data
         self.main_frame = tk.Frame(self.root)
         self.main_frame.pack(fill=tk.BOTH, expand=True)
 
@@ -49,12 +49,24 @@ class HydroponicsGUI:
         self.right_frame = tk.Frame(self.main_frame, width=400, padx=20, pady=20)
         self.right_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
 
-        # Temperature and Humidity Display (Separate Lines)
-        self.temperature_label = tk.Label(self.right_frame, text="Temp: -- °C", font=("Helvetica", 20))
-        self.temperature_label.pack(pady=10, anchor="center")
+        # Temperature and Humidity Display (Separate Rows)
+        self.temp_frame = tk.Frame(self.right_frame)
+        self.temp_frame.pack(pady=10)
 
-        self.humidity_label = tk.Label(self.right_frame, text="Humidity: -- %", font=("Helvetica", 20))
-        self.humidity_label.pack(pady=10, anchor="center")
+        self.temperature_label_title = tk.Label(self.temp_frame, text="Temperature", font=("Helvetica", 18, "bold"))
+        self.temperature_label_title.pack()
+
+        self.temperature_label = tk.Label(self.temp_frame, text="-- °C", font=("Helvetica", 20))
+        self.temperature_label.pack()
+
+        self.humid_frame = tk.Frame(self.right_frame)
+        self.humid_frame.pack(pady=10)
+
+        self.humidity_label_title = tk.Label(self.humid_frame, text="Humidity", font=("Helvetica", 18, "bold"))
+        self.humidity_label_title.pack()
+
+        self.humidity_label = tk.Label(self.humid_frame, text="-- %", font=("Helvetica", 20))
+        self.humidity_label.pack()
 
         # Manual controls
         self.states = {
@@ -89,8 +101,6 @@ class HydroponicsGUI:
                         response = self.arduino.readline().decode().strip()
                         if response.startswith("STATE:"):
                             self.update_relay_states(response)
-                        elif response.startswith("TEMP:") or response.startswith("HUM:"):
-                            self.update_sensor_data(response)
                 except Exception as e:
                     print(f"Error reading state update: {e}")
                     break
@@ -98,45 +108,42 @@ class HydroponicsGUI:
         threading.Thread(target=listen_for_state, daemon=True).start()
 
     def update_relay_states(self, response):
-        """ Parse the Arduino relay state message and update GUI indicators. """
+        """ Parse the Arduino state message and update GUI indicators. """
         try:
-            print(f"Received from Arduino: {response}")  # Debugging output
+            print(f"📩 Received from Arduino: {response}")  # Debugging output
 
+            # Ensure the response starts with STATE:
             if not response.startswith("STATE:"):
-                print(f"Warning: Unexpected message format: {response}")
+                print(f"⚠ Warning: Unexpected message format: {response}")
                 return
 
+            # Split and extract values (relay states + sensor data)
             state_values = response.split(":")[1].split(",")
 
-            if len(state_values) != 4:
-                print(f"Warning: Unexpected number of values in state update: {state_values}")
+            if len(state_values) != 6:
+                print(f"⚠ Warning: Unexpected number of values in state update: {state_values}")
                 return
 
-            # Update GUI indicators for relays
-            light_top, light_bottom, pump_top, pump_bottom = map(int, state_values)
+            # Parse relay states
+            light_top, light_bottom, pump_top, pump_bottom = map(int, state_values[:4])
+            temperature, humidity = map(int, state_values[4:6])  # Convert sensor values to int
+
+            # Update GUI switch indicators
             self.set_gui_state("lights_top", light_top)
             self.set_gui_state("lights_bottom", light_bottom)
             self.set_gui_state("pump_top", pump_top)
             self.set_gui_state("pump_bottom", pump_bottom)
 
-        except Exception as e:
-            print(f"Error parsing relay state: {e}")
+            # ✅ Update the connection indicator to green (since valid data was received)
+            self.connection_indicator.delete("all")
+            self.connection_indicator.create_oval(2, 2, 18, 18, fill="green")
 
-    def update_sensor_data(self, response):
-        """ Update the GUI with sensor data (Temperature & Humidity). """
-        try:
-            print(f"Received sensor data: {response}")  # Debugging output
-
-            if response.startswith("TEMP:"):
-                temp = response.split(":")[1].strip()
-                self.temperature_label.config(text=f"Temp: {temp}°C")
-
-            elif response.startswith("HUM:"):
-                humidity = response.split(":")[1].strip()
-                self.humidity_label.config(text=f"Humidity: {humidity}%")
+            # ✅ Update the temperature and humidity display
+            self.temperature_label.config(text=f"{temperature} °C")
+            self.humidity_label.config(text=f"{humidity} %")
 
         except Exception as e:
-            print(f"Error parsing sensor data: {e}")
+            print(f"⚠ Error parsing relay state: {e}")
 
     def set_gui_state(self, key, state):
         """ Update button text and indicator color based on relay state. """

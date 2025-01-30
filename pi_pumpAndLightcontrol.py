@@ -7,12 +7,12 @@ from gui_helpers import (
     update_clock,
     update_connection_status,
 )
-from arduino_helpers import connect_to_arduino, send_command_to_arduino
+from arduino_helpers import connect_to_arduino, send_command_to_arduino, check_arduino_connection
 
 class HydroponicsGUI:
-    def __init__(self, root, arduino):
+    def __init__(self, root):
         self.root = root
-        self.arduino = arduino
+        self.arduino = None  # Initially, no connection
         self.root.title("Hydroponics System Control")
         self.root.geometry("800x480")
         self.root.attributes("-fullscreen", False)
@@ -60,40 +60,56 @@ class HydroponicsGUI:
         # Start clock
         update_clock(self)
 
-        # Send time to Arduino
-        self.set_time_on_arduino()
+        # Try to connect to Arduino
+        self.start_arduino_connection()
 
         # Start listening for relay state updates
         self.start_relay_state_listener()
+
+    def start_arduino_connection(self):
+        """Continuously tries to connect to the Arduino if disconnected."""
+        def attempt_reconnect():
+            while self.arduino is None:
+                print("🔍 Searching for Arduino...")
+                self.arduino = connect_to_arduino()
+                if self.arduino:
+                    print("✅ Arduino connected!")
+                    self.set_time_on_arduino()  # Sync time on connection
+                else:
+                    print("🔴 No Arduino detected. Retrying in 5 seconds...")
+                    time.sleep(5)
+
+        threading.Thread(target=attempt_reconnect, daemon=True).start()
 
     def start_relay_state_listener(self):
         """ Continuously listen for state updates from the Arduino. """
         def listen_for_state():
             while True:
                 try:
-                    if self.arduino.in_waiting > 0:
+                    if self.arduino and self.arduino.in_waiting > 0:
                         response = self.arduino.readline().decode().strip()
                         if response.startswith("STATE:"):
                             self.update_relay_states(response)
                 except Exception as e:
                     print(f"Error reading state update: {e}")
-                    break
+                    self.arduino = None  # Mark as disconnected
+                    break  # Stop listening until a reconnection is made
 
         threading.Thread(target=listen_for_state, daemon=True).start()
 
     def update_relay_states(self, response):
         """ Parse the Arduino relay state message and update GUI indicators. """
         try:
-            print(f"Received from Arduino: {response}")  # Debugging output
+            print(f"📩 Received from Arduino: {response}")  # Debugging output
 
             if not response.startswith("STATE:"):
-                print(f"Warning: Unexpected message format: {response}")
+                print(f"⚠ Unexpected message format: {response}")
                 return
 
             state_values = response.split(":")[1].split(",")
 
             if len(state_values) != 4:
-                print(f"Warning: Unexpected number of values in state update: {state_values}")
+                print(f"⚠ Unexpected number of values in state update: {state_values}")
                 return
 
             light_top, light_bottom, pump_top, pump_bottom = map(int, state_values)
@@ -103,7 +119,7 @@ class HydroponicsGUI:
             self.set_gui_state("pump_bottom", pump_bottom)
 
         except Exception as e:
-            print(f"Error parsing relay state: {e}")
+            print(f"⚠ Error parsing relay state: {e}")
 
     def set_gui_state(self, key, state):
         """ Update button text and indicator color based on relay state. """
@@ -124,7 +140,7 @@ class HydroponicsGUI:
 
     def reset_to_arduino_schedule(self):
         """Reset all devices to follow Arduino’s schedule."""
-        print("Resetting to Arduino schedule...")
+        print("🔄 Resetting to Arduino schedule...")
         send_command_to_arduino(self.arduino, "RESET_SCHEDULE\n")
 
     def set_time_on_arduino(self):
@@ -132,19 +148,16 @@ class HydroponicsGUI:
         if self.arduino:
             try:
                 current_time = datetime.now().strftime("%H:%M:%S")
-                print(f"Sending time to Arduino: {current_time}")
+                print(f"⏰ Sending time to Arduino: {current_time}")
                 send_command_to_arduino(self.arduino, f"SET_TIME:{current_time}\n")
             except Exception as e:
-                print(f"Error sending time to Arduino: {e}")
+                print(f"⚠ Error sending time to Arduino: {e}")
 
 
 def main():
-    arduino = connect_to_arduino("/dev/ttyACM0", 9600)
     root = tk.Tk()
-    app = HydroponicsGUI(root, arduino)
+    app = HydroponicsGUI(root)
     root.mainloop()
-    if arduino:
-        arduino.close()
 
 
 if __name__ == "__main__":

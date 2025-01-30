@@ -52,16 +52,16 @@ def toggle_state(gui_instance, state_key, button, light, device_code):
         print(f"Toggle OFF for {device_code}. Command: {command.strip()}")
         send_command_to_arduino(gui_instance.arduino, command)
 
-def create_reset_button(gui_instance):
-    """Create a reset button to turn off all switches."""
+def create_reset_button(gui):
+    """Create a reset button that tells the Arduino to follow its schedule."""
     reset_button = tk.Button(
-        gui_instance.left_frame,
-        text="Reset All",
+        gui.left_frame,
+        text="Reset to Schedule",
         font=("Helvetica", 18),
-        bg="red",
+        bg="blue",
         fg="white",
-        width=15,
-        command=gui_instance.reset_all_switches,
+        width=20,
+        command=gui.reset_to_arduino_schedule,  # ✅ FIXED: Call the correct function
     )
     reset_button.grid(row=9, column=0, columnspan=3, pady=20)
 

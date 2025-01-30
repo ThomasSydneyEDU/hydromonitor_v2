@@ -1,5 +1,6 @@
 import tkinter as tk
 import threading
+import time
 
 def create_switch(gui, label_text, row, state_key, device_code):
     """Create a switch with a light indicator."""
@@ -36,6 +37,16 @@ def create_reset_button(gui):
         command=gui.reset_to_arduino_schedule,
     )
     reset_button.grid(row=5, column=0, columnspan=3, pady=20)
+
+def update_clock(gui):
+    """Update the clock display every second."""
+    def refresh_clock():
+        while True:
+            current_time = time.strftime("%b %d %H:%M")
+            gui.clock_label.config(text=current_time)
+            time.sleep(1)
+
+    threading.Thread(target=refresh_clock, daemon=True).start()
 
 def update_connection_status(gui):
     """ Continuously check the Arduino connection and update the UI. """

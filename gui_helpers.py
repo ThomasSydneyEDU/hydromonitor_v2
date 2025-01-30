@@ -2,6 +2,8 @@ import tkinter as tk
 import threading
 import time
 
+from arduino_helpers import connect_to_arduino  # ✅ Use existing function
+
 def create_switch(gui, label_text, row, state_key, device_code):
     """Create a switch with a light indicator."""
     label = tk.Label(gui.left_frame, text=label_text, font=("Helvetica", 18))
@@ -48,14 +50,16 @@ def update_clock(gui):
 
     threading.Thread(target=refresh_clock, daemon=True).start()
 
+
+
 def update_connection_status(gui):
     """ Continuously check the Arduino connection and update the UI. """
     def check_connection():
         while True:
             if gui.arduino and gui.arduino.is_open:
                 try:
-                    gui.arduino.write(b"PING\n")
-                    time.sleep(0.5)
+                    gui.arduino.write(b"PING\n")  # Send PING command
+                    time.sleep(0.5)  # Wait for response
                     if gui.arduino.in_waiting > 0:
                         response = gui.arduino.readline().decode().strip()
                         if response == "PING_OK":
@@ -66,10 +70,10 @@ def update_connection_status(gui):
                         update_indicator(gui.connection_indicator, "red")
                 except Exception:
                     update_indicator(gui.connection_indicator, "red")
-                    gui.arduino = None  # Mark as disconnected
+                    gui.arduino = connect_to_arduino()  # ✅ Use existing function to reconnect
             else:
                 update_indicator(gui.connection_indicator, "red")
-                gui.arduino = find_arduino()
+                gui.arduino = connect_to_arduino()  # ✅ Attempt reconnect
             time.sleep(3)  # Check every 3 seconds
 
     threading.Thread(target=check_connection, daemon=True).start()

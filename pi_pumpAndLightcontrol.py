@@ -45,6 +45,16 @@ class HydroponicsGUI:
         self.left_frame = tk.Frame(self.main_frame, width=400, padx=20, pady=20)
         self.left_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
+        # Right frame for sensor data
+        self.right_frame = tk.Frame(self.main_frame, width=400, padx=20, pady=20)
+        self.right_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
+
+        # Temperature and Humidity Display
+        self.sensor_label = tk.Label(
+            self.right_frame, text="Temp: -- °C | Hum: -- %", font=("Helvetica", 20)
+        )
+        self.sensor_label.pack(pady=20, anchor="center")
+
         # Manual controls
         self.states = {
             "lights_top": {"state": False, "device_code": "LT"},
@@ -68,30 +78,6 @@ class HydroponicsGUI:
 
         # Start listening for relay state updates
         self.start_relay_state_listener()
-
-    def toggle_switch(self, state_key):
-        """Toggle a device state manually and send the command to the Arduino."""
-        if state_key not in self.states:
-            print(f"⚠ Error: {state_key} not found in self.states")
-            return
-
-        info = self.states[state_key]
-        new_state = not info["state"]
-        info["state"] = new_state  # Toggle state
-
-        # Update GUI button and indicator light
-        if new_state:
-            info["button"].config(text="ON", bg="darkgreen")
-            info["light"].delete("all")
-            info["light"].create_oval(2, 2, 18, 18, fill="green")
-            send_command_to_arduino(self.arduino, f"{info['device_code']}:ON\n")
-        else:
-            info["button"].config(text="OFF", bg="darkgrey")
-            info["light"].delete("all")
-            info["light"].create_oval(2, 2, 18, 18, fill="red")
-            send_command_to_arduino(self.arduino, f"{info['device_code']}:OFF\n")
-
-        print(f"🔄 Toggled {state_key} to {'ON' if new_state else 'OFF'}")
 
     def start_relay_state_listener(self):
         """ Continuously listen for state updates from the Arduino. """
@@ -117,17 +103,31 @@ class HydroponicsGUI:
                 print(f"Warning: Unexpected message format: {response}")
                 return
 
-            state_values = response.split(":")[1].split(",")
+            # Split response: STATE + SENSOR DATA
+            parts = response.split(" | ")
+            state_values = parts[0].split(":")[1].split(",")  # Extract relay states
 
             if len(state_values) != 4:
                 print(f"Warning: Unexpected number of values in state update: {state_values}")
                 return
 
+            # Update GUI indicators for relays
             light_top, light_bottom, pump_top, pump_bottom = map(int, state_values)
             self.set_gui_state("lights_top", light_top)
             self.set_gui_state("lights_bottom", light_bottom)
             self.set_gui_state("pump_top", pump_top)
             self.set_gui_state("pump_bottom", pump_bottom)
+
+            # Extract and update sensor data if present
+            temp, hum = "--", "--"  # Default values
+            for part in parts[1:]:
+                if "TEMP:" in part:
+                    temp = part.split(":")[1].strip()
+                if "HUM:" in part:
+                    hum = part.split(":")[1].strip()
+
+            # Update GUI with sensor readings
+            self.sensor_label.config(text=f"Temp: {temp}°C | Hum: {hum}%")
 
         except Exception as e:
             print(f"Error parsing relay state: {e}")

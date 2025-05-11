@@ -32,6 +32,11 @@ void setup() {
     pinMode(RELAY_PUMP_TOP, OUTPUT);
     pinMode(RELAY_PUMP_BOTTOM, OUTPUT);
 
+    digitalWrite(RELAY_LIGHTS_TOP, HIGH);
+    digitalWrite(RELAY_LIGHTS_BOTTOM, HIGH);
+    digitalWrite(RELAY_PUMP_TOP, HIGH);
+    digitalWrite(RELAY_PUMP_BOTTOM, HIGH);
+
     // Initialize serial communication
     Serial.begin(9600);
     delay(2000);  // Allow serial connection to stabilize
@@ -90,13 +95,13 @@ void sendRelayState() {
 
     // Send relay states and sensor values in a single integer-based string
     Serial.print("STATE:");
-    Serial.print(digitalRead(RELAY_LIGHTS_TOP));
+    Serial.print(digitalRead(RELAY_LIGHTS_TOP) == LOW ? 1 : 0);
     Serial.print(",");
-    Serial.print(digitalRead(RELAY_LIGHTS_BOTTOM));
+    Serial.print(digitalRead(RELAY_LIGHTS_BOTTOM) == LOW ? 1 : 0);
     Serial.print(",");
-    Serial.print(digitalRead(RELAY_PUMP_TOP));
+    Serial.print(digitalRead(RELAY_PUMP_TOP) == LOW ? 1 : 0);
     Serial.print(",");
-    Serial.print(digitalRead(RELAY_PUMP_BOTTOM));
+    Serial.print(digitalRead(RELAY_PUMP_BOTTOM) == LOW ? 1 : 0);
     Serial.print(",");
     Serial.print(temp);
     Serial.print(",");
@@ -164,12 +169,12 @@ void overrideDevice(String command) {
 
     String state = command.substring(3);
     if (state == "ON") {
-        digitalWrite(relayPin, HIGH);
+        digitalWrite(relayPin, LOW);
         overrideActive = true;
         overrideEndTime = millis() + 600000; // 10-minute override
         Serial.println(deviceName + " overridden to ON.");
     } else if (state == "OFF") {
-        digitalWrite(relayPin, LOW);
+        digitalWrite(relayPin, HIGH);
         overrideActive = true;
         overrideEndTime = millis() + 600000;
         Serial.println(deviceName + " overridden to OFF.");
@@ -226,14 +231,14 @@ void runSchedule() {
 
     // **Lights Schedule (7 AM - 7 PM)**
     bool lightsState = (hours >= 7 && hours < 19);
-    digitalWrite(RELAY_LIGHTS_TOP, lightsState ? HIGH : LOW);
-    digitalWrite(RELAY_LIGHTS_BOTTOM, lightsState ? HIGH : LOW);
+    digitalWrite(RELAY_LIGHTS_TOP, lightsState ? LOW : HIGH);
+    digitalWrite(RELAY_LIGHTS_BOTTOM, lightsState ? LOW : HIGH);
 
     // **Pumps Schedule (2 minutes at specific hours)**
     bool pumpsState = (minutes < 2) && (
         hours == 7 || hours == 9 || hours == 11 ||
         hours == 13 || hours == 15 || hours == 17
     );
-    digitalWrite(RELAY_PUMP_TOP, pumpsState ? HIGH : LOW);
-    digitalWrite(RELAY_PUMP_BOTTOM, pumpsState ? HIGH : LOW);
+    digitalWrite(RELAY_PUMP_TOP, pumpsState ? LOW : HIGH);
+    digitalWrite(RELAY_PUMP_BOTTOM, pumpsState ? LOW : HIGH);
 }

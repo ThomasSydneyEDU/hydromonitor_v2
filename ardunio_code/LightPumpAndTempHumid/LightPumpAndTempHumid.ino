@@ -5,6 +5,9 @@
 #define RELAY_PUMP_TOP 12
 #define RELAY_PUMP_BOTTOM 13
 
+#define FLOAT_SENSOR_TOP 5
+#define FLOAT_SENSOR_BOTTOM 6
+
 // Include DHT Sensor Library
 #include <Adafruit_Sensor.h>
 #include <DHT.h>
@@ -43,6 +46,9 @@ void setup() {
     digitalWrite(RELAY_LIGHTS_BOTTOM, HIGH);
     digitalWrite(RELAY_PUMP_TOP, HIGH);
     digitalWrite(RELAY_PUMP_BOTTOM, HIGH);
+
+    pinMode(FLOAT_SENSOR_TOP, INPUT_PULLUP);
+    pinMode(FLOAT_SENSOR_BOTTOM, INPUT_PULLUP);
 
     // Initialize serial communication
     Serial.begin(9600);
@@ -115,6 +121,9 @@ void sendRelayState() {
         humid = -1;
     }
 
+    int floatTop = digitalRead(FLOAT_SENSOR_TOP) == LOW ? 1 : 0;
+    int floatBottom = digitalRead(FLOAT_SENSOR_BOTTOM) == LOW ? 1 : 0;
+
     // Send relay states and sensor values in a single integer-based string
     Serial.print("STATE:");
     Serial.print(digitalRead(RELAY_LIGHTS_TOP) == LOW ? 1 : 0);
@@ -131,7 +140,11 @@ void sendRelayState() {
     Serial.print(",");
     Serial.print(waterTemp1, 1);
     Serial.print(",");
-    Serial.println(waterTemp2, 1);
+    Serial.print(waterTemp2, 1);
+    Serial.print(",");
+    Serial.print(floatTop);
+    Serial.print(",");
+    Serial.println(floatBottom);
 }
 
 // Function to read and send temperature & humidity

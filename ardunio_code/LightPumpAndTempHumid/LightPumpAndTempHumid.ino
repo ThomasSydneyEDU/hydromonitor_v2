@@ -9,11 +9,18 @@
 #include <Adafruit_Sensor.h>
 #include <DHT.h>
 #include <DHT_U.h>
+#include <OneWire.h>
+#include <DallasTemperature.h>
 
 // Define DHT Sensor Pin & Type
 #define DHTPIN 3
 #define DHTTYPE DHT11
 DHT dht(DHTPIN, DHTTYPE);
+
+#define ONE_WIRE_BUS 4
+OneWire oneWire(ONE_WIRE_BUS);
+DallasTemperature sensors(&oneWire);
+DeviceAddress sensor1, sensor2;
 
 // Time tracking variables
 int hours = 0, minutes = 0, seconds = 0;
@@ -43,6 +50,14 @@ void setup() {
 
     // Initialize DHT Sensor
     dht.begin();
+
+    sensors.begin();
+    if (!sensors.getAddress(sensor1, 0)) {
+        Serial.println("Could not find sensor 0");
+    }
+    if (!sensors.getAddress(sensor2, 1)) {
+        Serial.println("Could not find sensor 1");
+    }
 
     Serial.println("Arduino is ready. Default time: 00:00. Running schedule.");
 }
@@ -83,6 +98,13 @@ void loop() {
 
 // Function to send relay states and sensor data to the Pi
 void sendRelayState() {
+    sensors.requestTemperatures();
+    float waterTemp1 = sensors.getTempC(sensor1);
+    float waterTemp2 = sensors.getTempC(sensor2);
+
+    if (isnan(waterTemp1)) waterTemp1 = -1;
+    if (isnan(waterTemp2)) waterTemp2 = -1;
+
     // Read sensor values
     int temp = (int)dht.readTemperature(); // Convert float to int
     int humid = (int)dht.readHumidity();   // Convert float to int
@@ -105,7 +127,11 @@ void sendRelayState() {
     Serial.print(",");
     Serial.print(temp);
     Serial.print(",");
-    Serial.println(humid);
+    Serial.print(humid);
+    Serial.print(",");
+    Serial.print(waterTemp1, 1);
+    Serial.print(",");
+    Serial.println(waterTemp2, 1);
 }
 
 // Function to read and send temperature & humidity

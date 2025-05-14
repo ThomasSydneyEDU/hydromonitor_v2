@@ -23,13 +23,13 @@ class HydroponicsGUI:
         self.top_frame.pack(fill=tk.X, side=tk.TOP)
 
         # Clock display
-        self.clock_label = tk.Label(self.top_frame, text="", font=("Helvetica", 24))
+        self.clock_label = tk.Label(self.top_frame, text="", font=("Helvetica", 18))
         self.clock_label.pack(side=tk.LEFT, padx=20)
 
         # Arduino connection indicator with label
         connection_frame = tk.Frame(self.top_frame)
         connection_frame.pack(side=tk.RIGHT, padx=20)
-        connection_label = tk.Label(connection_frame, text="Arduino Connected", font=("Helvetica", 16))
+        connection_label = tk.Label(connection_frame, text="Arduino Connected", font=("Helvetica", 12))
         connection_label.grid(row=0, column=0, padx=(0, 10))
         self.connection_indicator = tk.Canvas(connection_frame, width=20, height=20, highlightthickness=0)
         self.connection_indicator.grid(row=0, column=1)
@@ -53,45 +53,45 @@ class HydroponicsGUI:
         self.temp_frame = tk.Frame(self.right_frame)
         self.temp_frame.pack(pady=10)
 
-        self.temperature_label_title = tk.Label(self.temp_frame, text="Temperature", font=("Helvetica", 18, "bold"))
+        self.temperature_label_title = tk.Label(self.temp_frame, text="Temperature", font=("Helvetica", 14, "bold"))
         self.temperature_label_title.pack()
 
-        self.temperature_label = tk.Label(self.temp_frame, text="-- °C", font=("Helvetica", 20))
+        self.temperature_label = tk.Label(self.temp_frame, text="-- °C", font=("Helvetica", 14))
         self.temperature_label.pack()
 
         self.humid_frame = tk.Frame(self.right_frame)
         self.humid_frame.pack(pady=10)
 
-        self.humidity_label_title = tk.Label(self.humid_frame, text="Humidity", font=("Helvetica", 18, "bold"))
+        self.humidity_label_title = tk.Label(self.humid_frame, text="Humidity", font=("Helvetica", 14, "bold"))
         self.humidity_label_title.pack()
 
-        self.humidity_label = tk.Label(self.humid_frame, text="-- %", font=("Helvetica", 20))
+        self.humidity_label = tk.Label(self.humid_frame, text="-- %", font=("Helvetica", 14))
         self.humidity_label.pack()
 
         # Water Temperature Display
         self.water_temp_frame = tk.Frame(self.right_frame)
         self.water_temp_frame.pack(pady=10)
 
-        self.water_temp_label_title = tk.Label(self.water_temp_frame, text="Water Temperatures", font=("Helvetica", 18, "bold"))
+        self.water_temp_label_title = tk.Label(self.water_temp_frame, text="Water Temperatures", font=("Helvetica", 14, "bold"))
         self.water_temp_label_title.pack()
 
-        self.water_temp1_label = tk.Label(self.water_temp_frame, text="Sensor 1: -- °C", font=("Helvetica", 16))
+        self.water_temp1_label = tk.Label(self.water_temp_frame, text="Sensor 1: -- °C", font=("Helvetica", 12))
         self.water_temp1_label.pack()
 
-        self.water_temp2_label = tk.Label(self.water_temp_frame, text="Sensor 2: -- °C", font=("Helvetica", 16))
+        self.water_temp2_label = tk.Label(self.water_temp_frame, text="Sensor 2: -- °C", font=("Helvetica", 12))
         self.water_temp2_label.pack()
 
         # Float Sensor Display
         self.float_frame = tk.Frame(self.right_frame)
         self.float_frame.pack(pady=10)
 
-        self.float_label_title = tk.Label(self.float_frame, text="Float Sensors", font=("Helvetica", 18, "bold"))
+        self.float_label_title = tk.Label(self.float_frame, text="Float Sensors", font=("Helvetica", 14, "bold"))
         self.float_label_title.pack()
 
-        self.float_top_label = tk.Label(self.float_frame, text="Top: --", font=("Helvetica", 16))
+        self.float_top_label = tk.Label(self.float_frame, text="Top: --", font=("Helvetica", 12))
         self.float_top_label.pack()
 
-        self.float_bottom_label = tk.Label(self.float_frame, text="Bottom: --", font=("Helvetica", 16))
+        self.float_bottom_label = tk.Label(self.float_frame, text="Bottom: --", font=("Helvetica", 12))
         self.float_bottom_label.pack()
 
         # Manual controls
@@ -197,8 +197,8 @@ class HydroponicsGUI:
             self.water_temp1_label.config(text=f"Sensor 1: {water_temp1:.1f} °C")
             self.water_temp2_label.config(text=f"Sensor 2: {water_temp2:.1f} °C")
 
-            self.float_top_label.config(text=f"Top: {'ON' if float_top else 'OFF'}")
-            self.float_bottom_label.config(text=f"Bottom: {'ON' if float_bottom else 'OFF'}")
+            self.float_top_label.config(text=f"Top: {'Okay' if float_top else 'Low'}")
+            self.float_bottom_label.config(text=f"Bottom: {'Okay' if float_bottom else 'Low'}")
 
         except Exception as e:
             print(f"⚠ Error parsing relay state: {e}")

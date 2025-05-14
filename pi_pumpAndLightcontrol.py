@@ -81,6 +81,19 @@ class HydroponicsGUI:
         self.water_temp2_label = tk.Label(self.water_temp_frame, text="Sensor 2: -- °C", font=("Helvetica", 16))
         self.water_temp2_label.pack()
 
+        # Float Sensor Display
+        self.float_frame = tk.Frame(self.right_frame)
+        self.float_frame.pack(pady=10)
+
+        self.float_label_title = tk.Label(self.float_frame, text="Float Sensors", font=("Helvetica", 18, "bold"))
+        self.float_label_title.pack()
+
+        self.float_top_label = tk.Label(self.float_frame, text="Top: --", font=("Helvetica", 16))
+        self.float_top_label.pack()
+
+        self.float_bottom_label = tk.Label(self.float_frame, text="Bottom: --", font=("Helvetica", 16))
+        self.float_bottom_label.pack()
+
         # Manual controls
         self.states = {
             "lights_top": {"state": False, "device_code": "LT"},
@@ -156,7 +169,7 @@ class HydroponicsGUI:
             # Split and extract values (relay states + sensor data)
             state_values = response.split(":")[1].split(",")
 
-            if len(state_values) != 8:
+            if len(state_values) != 10:
                 print(f"⚠ Warning: Unexpected number of values in state update: {state_values}")
                 return
 
@@ -164,6 +177,7 @@ class HydroponicsGUI:
             light_top, light_bottom, pump_top, pump_bottom = map(int, state_values[:4])
             temperature, humidity = map(int, state_values[4:6])
             water_temp1, water_temp2 = map(float, state_values[6:8])
+            float_top, float_bottom = map(int, state_values[8:10])
 
             # Update GUI switch indicators
             self.set_gui_state("lights_top", light_top)
@@ -182,6 +196,9 @@ class HydroponicsGUI:
             # Update water temperature display
             self.water_temp1_label.config(text=f"Sensor 1: {water_temp1:.1f} °C")
             self.water_temp2_label.config(text=f"Sensor 2: {water_temp2:.1f} °C")
+
+            self.float_top_label.config(text=f"Top: {'ON' if float_top else 'OFF'}")
+            self.float_bottom_label.config(text=f"Bottom: {'ON' if float_bottom else 'OFF'}")
 
         except Exception as e:
             print(f"⚠ Error parsing relay state: {e}")

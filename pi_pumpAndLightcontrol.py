@@ -23,17 +23,16 @@ class HydroponicsGUI:
         self.top_frame = tk.Frame(self.root, padx=20, pady=10)
         self.top_frame.pack(fill=tk.X, side=tk.TOP)
 
-        # Clock display
-        self.clock_label = tk.Label(self.top_frame, text="", font=("Helvetica", 18))
-        self.clock_label.pack(side=tk.LEFT, padx=20)
-
         # Arduino connection indicator with label
         connection_frame = tk.Frame(self.top_frame)
         connection_frame.pack(side=tk.RIGHT, padx=20)
         connection_label = tk.Label(connection_frame, text="Arduino Connected", font=("Helvetica", 12))
-        connection_label.grid(row=0, column=0, padx=(0, 10))
+        connection_label.grid(row=0, column=0, padx=(0, 5))
         self.connection_indicator = tk.Canvas(connection_frame, width=20, height=20, highlightthickness=0)
         self.connection_indicator.grid(row=0, column=1)
+        # Clock display moved to the right side of the top frame, inside connection_frame
+        self.clock_label = tk.Label(connection_frame, text="", font=("Helvetica", 14))
+        self.clock_label.grid(row=0, column=2, padx=(10, 0))
 
         # Initialize connection status check
         update_connection_status(self)
@@ -158,9 +157,9 @@ class HydroponicsGUI:
             self.states[key] = {"state": False, "device_code": code}
             button = tk.Button(parent,
                                text=f"{label}\nTurn ON",
-                               font=("Helvetica", 12),
-                               width=18,
-                               height=3,
+                               font=("Helvetica", 11),
+                               width=16,
+                               height=2,
                                bg="red",
                                activebackground="darkred",
                                fg="white",

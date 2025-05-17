@@ -234,15 +234,33 @@ class HydroponicsGUI:
             # Split and extract values (relay states + sensor data)
             state_values = response.split(":")[1].split(",")
 
-            if len(state_values) != 12:
+            if len(state_values) != 15:
                 print(f"⚠ Warning: Unexpected number of values in state update: {state_values}")
                 return
 
-            # Parse relay states and sensor data
-            light_top, light_bottom, pump_top, pump_bottom, fan_vent, fan_circ = map(int, state_values[:6])
-            temperature, humidity = map(int, state_values[6:8])
-            water_temp1, water_temp2 = map(float, state_values[8:10])
-            float_top, float_bottom = map(int, state_values[10:12])
+            (
+                light_top, light_bottom, pump_top, pump_bottom, fan_vent, fan_circ,
+                temperature, humidity,
+                water_temp1, water_temp2,
+                float_top, float_bottom,
+                sensor_pump_top, sensor_pump_bottom, drain_actuator
+            ) = state_values
+
+            light_top = int(light_top)
+            light_bottom = int(light_bottom)
+            pump_top = int(pump_top)
+            pump_bottom = int(pump_bottom)
+            fan_vent = int(fan_vent)
+            fan_circ = int(fan_circ)
+            temperature = int(temperature)
+            humidity = int(humidity)
+            water_temp1 = float(water_temp1)
+            water_temp2 = float(water_temp2)
+            float_top = int(float_top)
+            float_bottom = int(float_bottom)
+            sensor_pump_top = int(sensor_pump_top)
+            sensor_pump_bottom = int(sensor_pump_bottom)
+            drain_actuator = int(drain_actuator)
 
             # Update GUI switch indicators
             self.set_gui_state("lights_top", light_top)
@@ -251,9 +269,9 @@ class HydroponicsGUI:
             self.set_gui_state("pump_bottom", pump_bottom)
             self.set_gui_state("fan_vent", fan_vent)
             self.set_gui_state("fan_circ", fan_circ)
-
-            # Placeholder for sensor pump and drain actuator states if included in Arduino message
-            # For now, no state updates from Arduino for these devices
+            self.set_gui_state("sensor_pump_top", sensor_pump_top)
+            self.set_gui_state("sensor_pump_bottom", sensor_pump_bottom)
+            self.set_gui_state("drain_actuator", drain_actuator)
 
             # ✅ Update the connection indicator to green (since valid data was received)
             self.connection_indicator.delete("all")

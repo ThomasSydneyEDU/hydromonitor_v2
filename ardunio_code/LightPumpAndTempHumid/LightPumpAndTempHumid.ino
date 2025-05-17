@@ -1,12 +1,21 @@
 // Pin Definitions
 
+#define RELAY_SENSOR_PUMP_TOP 7
+#define RELAY_SENSOR_PUMP_BOTTOM 8
+#define RELAY_DRAIN_ACTUATOR 9
 #define RELAY_LIGHTS_TOP 10
 #define RELAY_LIGHTS_BOTTOM 11
 #define RELAY_PUMP_TOP 12
 #define RELAY_PUMP_BOTTOM 13
 
+#define RELAY_VENT_FAN A2
+#define RELAY_CIRCULATION_FAN A3
+
 #define FLOAT_SENSOR_TOP 5
 #define FLOAT_SENSOR_BOTTOM 6
+
+#define DHTPIN 3  // Air temp and humidity sensor
+#define ONE_WIRE_BUS 4  // Water temperature probes
 
 // Include DHT Sensor Library
 #include <Adafruit_Sensor.h>
@@ -35,6 +44,16 @@ unsigned long lastSensorUpdate = 0;
 bool overrideActive = false;
 unsigned long overrideEndTime = 0;  // Overrides expire after 10 minutes
 
+// Vent fan timeout
+bool ventFanRecentlyOn = false;
+unsigned long ventFanOffDelayStart = 0;
+const unsigned long ventFanDelayDuration = 5 * 60 * 1000; // 5 minutes
+
+// Vent fan cooldown
+bool ventFanInCooldown = false;
+unsigned long ventFanCooldownStart = 0;
+const unsigned long ventFanCooldownDuration = 10 * 60 * 1000; // 10 minutes
+
 void setup() {
     // Set relay pins as outputs
     pinMode(RELAY_LIGHTS_TOP, OUTPUT);
@@ -46,6 +65,20 @@ void setup() {
     digitalWrite(RELAY_LIGHTS_BOTTOM, HIGH);
     digitalWrite(RELAY_PUMP_TOP, HIGH);
     digitalWrite(RELAY_PUMP_BOTTOM, HIGH);
+
+    pinMode(RELAY_VENT_FAN, OUTPUT);
+    pinMode(RELAY_CIRCULATION_FAN, OUTPUT);
+
+    digitalWrite(RELAY_VENT_FAN, HIGH);
+    digitalWrite(RELAY_CIRCULATION_FAN, HIGH);
+
+    pinMode(RELAY_SENSOR_PUMP_TOP, OUTPUT);
+    pinMode(RELAY_SENSOR_PUMP_BOTTOM, OUTPUT);
+    pinMode(RELAY_DRAIN_ACTUATOR, OUTPUT);
+
+    digitalWrite(RELAY_SENSOR_PUMP_TOP, HIGH);
+    digitalWrite(RELAY_SENSOR_PUMP_BOTTOM, HIGH);
+    digitalWrite(RELAY_DRAIN_ACTUATOR, HIGH);
 
     pinMode(FLOAT_SENSOR_TOP, INPUT_PULLUP);
     pinMode(FLOAT_SENSOR_BOTTOM, INPUT_PULLUP);
@@ -134,6 +167,10 @@ void sendRelayState() {
     Serial.print(",");
     Serial.print(digitalRead(RELAY_PUMP_BOTTOM) == LOW ? 1 : 0);
     Serial.print(",");
+    Serial.print(digitalRead(RELAY_VENT_FAN) == LOW ? 1 : 0);
+    Serial.print(",");
+    Serial.print(digitalRead(RELAY_CIRCULATION_FAN) == LOW ? 1 : 0);
+    Serial.print(",");
     Serial.print(temp);
     Serial.print(",");
     Serial.print(humid);
@@ -144,7 +181,13 @@ void sendRelayState() {
     Serial.print(",");
     Serial.print(floatTop);
     Serial.print(",");
-    Serial.println(floatBottom);
+    Serial.print(floatBottom);
+    Serial.print(",");
+    Serial.print(digitalRead(RELAY_SENSOR_PUMP_TOP) == LOW ? 1 : 0);
+    Serial.print(",");
+    Serial.print(digitalRead(RELAY_SENSOR_PUMP_BOTTOM) == LOW ? 1 : 0);
+    Serial.print(",");
+    Serial.println(digitalRead(RELAY_DRAIN_ACTUATOR) == LOW ? 1 : 0);
 }
 
 // Function to read and send temperature & humidity
@@ -177,7 +220,10 @@ void handleCommand(String command) {
         runSchedule();  
         sendRelayState();  
     } else if (command.startsWith("LT:") || command.startsWith("LB:") || 
-               command.startsWith("PT:") || command.startsWith("PB:")) {
+               command.startsWith("PT:") || command.startsWith("PB:") ||
+               command.startsWith("FV:") || command.startsWith("FC:") ||
+               command.startsWith("SPT:") || command.startsWith("SPB:") ||
+               command.startsWith("DA:")) {
         overrideDevice(command);
     } else {
         Serial.println("Unknown command: " + command);
@@ -201,12 +247,27 @@ void overrideDevice(String command) {
     } else if (command.startsWith("PB:")) {
         relayPin = RELAY_PUMP_BOTTOM;
         deviceName = "Pump Bottom";
+    } else if (command.startsWith("FV:")) {
+        relayPin = RELAY_VENT_FAN;
+        deviceName = "Vent Fan";
+    } else if (command.startsWith("FC:")) {
+        relayPin = RELAY_CIRCULATION_FAN;
+        deviceName = "Circulation Fan";
+    } else if (command.startsWith("SPT:")) {
+        relayPin = RELAY_SENSOR_PUMP_TOP;
+        deviceName = "Sensor Pump Top";
+    } else if (command.startsWith("SPB:")) {
+        relayPin = RELAY_SENSOR_PUMP_BOTTOM;
+        deviceName = "Sensor Pump Bottom";
+    } else if (command.startsWith("DA:")) {
+        relayPin = RELAY_DRAIN_ACTUATOR;
+        deviceName = "Drain Actuator";
     } else {
         Serial.println("Unknown command: " + command);
         return;
     }
 
-    String state = command.substring(3);
+    String state = command.substring(command.indexOf(':') + 1);
     if (state == "ON") {
         digitalWrite(relayPin, LOW);
         overrideActive = true;
@@ -280,4 +341,36 @@ void runSchedule() {
     );
     digitalWrite(RELAY_PUMP_TOP, pumpsState ? LOW : HIGH);
     digitalWrite(RELAY_PUMP_BOTTOM, pumpsState ? LOW : HIGH);
+
+    // Circulation fan schedule: ON for 10 minutes every hour
+    bool circulationFanOn = (minutes % 60 < 10);
+    digitalWrite(RELAY_CIRCULATION_FAN, circulationFanOn ? LOW : HIGH);
+
+    // Vent fan trigger with timeout and cooldown logic
+    int currentTemp = dht.readTemperature();
+    int currentHumid = dht.readHumidity();
+
+    bool sensorTrigger = (currentTemp > 28 || currentHumid > 80);
+
+    if (sensorTrigger && !ventFanInCooldown) {
+        ventFanRecentlyOn = true;
+        ventFanOffDelayStart = millis();
+        digitalWrite(RELAY_VENT_FAN, LOW);
+    } else if (ventFanRecentlyOn) {
+        if (millis() - ventFanOffDelayStart < ventFanDelayDuration) {
+            digitalWrite(RELAY_VENT_FAN, LOW);
+        } else {
+            ventFanRecentlyOn = false;
+            ventFanInCooldown = true;
+            ventFanCooldownStart = millis();
+            digitalWrite(RELAY_VENT_FAN, HIGH);
+        }
+    } else if (ventFanInCooldown) {
+        if (millis() - ventFanCooldownStart >= ventFanCooldownDuration) {
+            ventFanInCooldown = false;
+        }
+        digitalWrite(RELAY_VENT_FAN, HIGH);
+    } else {
+        digitalWrite(RELAY_VENT_FAN, HIGH);
+    }
 }

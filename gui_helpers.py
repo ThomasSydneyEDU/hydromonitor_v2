@@ -4,13 +4,15 @@ import time
 from arduino_helpers import check_arduino_connection, connect_to_arduino
 
 
-def create_switch(gui, label_text, row, state_key, device_code):
+def create_switch(gui, label_text, row, state_key, device_code, parent=None):
+    if parent is None:
+        parent = gui.left_frame
     """Create a switch with a light indicator."""
-    label = tk.Label(gui.left_frame, text=label_text, font=("Helvetica", 18))
+    label = tk.Label(parent, text=label_text, font=("Helvetica", 18))
     label.grid(row=row, column=0, padx=10, pady=10, sticky="w")
 
     button = tk.Button(
-        gui.left_frame,
+        parent,
         text="OFF",
         font=("Helvetica", 18),
         bg="darkgrey",
@@ -20,7 +22,7 @@ def create_switch(gui, label_text, row, state_key, device_code):
     )
     button.grid(row=row, column=1, padx=10, pady=10)
 
-    light = tk.Canvas(gui.left_frame, width=20, height=20, highlightthickness=0)
+    light = tk.Canvas(parent, width=20, height=20, highlightthickness=0)
     light.grid(row=row, column=2, padx=10, pady=10)
     light.create_oval(2, 2, 18, 18, fill="red")
 
@@ -38,7 +40,7 @@ def create_reset_button(gui):
         width=20,
         command=gui.reset_to_arduino_schedule,
     )
-    reset_button.grid(row=5, column=0, columnspan=3, pady=20)
+    reset_button.pack(pady=20)
 
 def update_clock(gui):
     """Update the clock display every second."""

@@ -1,4 +1,5 @@
 import tkinter as tk
+import tkinter.ttk as ttk
 import threading
 from datetime import datetime
 from gui_helpers import (
@@ -41,11 +42,50 @@ class HydroponicsGUI:
         self.main_frame = tk.Frame(self.root)
         self.main_frame.pack(fill=tk.BOTH, expand=True)
 
-        # Left frame for switches
-        self.left_frame = tk.Frame(self.main_frame, width=400, padx=20, pady=20)
-        self.left_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        # Center frame for switches
+        self.center_frame = tk.Frame(self.main_frame, padx=20, pady=20)
+        self.center_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
-        # Right frame for sensor data
+        # Switches frame holds both relay columns
+        self.switches_frame = tk.Frame(self.root)
+        # Add relay columns to switches_frame
+        self.relay_column_1 = tk.Frame(self.switches_frame)
+        self.relay_column_1.pack(side=tk.LEFT, expand=True, padx=10)
+
+        self.relay_column_2 = tk.Frame(self.switches_frame)
+        self.relay_column_2.pack(side=tk.RIGHT, expand=True, padx=10)
+
+        # --- Group buttons into labeled frames in relay columns ---
+        self.lights_frame = tk.LabelFrame(self.relay_column_1, text="Lights", font=("Helvetica", 12, "bold"))
+        self.lights_frame.pack(fill=tk.BOTH, expand=True, pady=5)
+
+        self.pumps_frame = tk.LabelFrame(self.relay_column_1, text="Pumps", font=("Helvetica", 12, "bold"))
+        self.pumps_frame.pack(fill=tk.BOTH, expand=True, pady=5)
+
+        # Reset to Schedule button
+        self.reset_frame = tk.Frame(self.relay_column_1)
+        self.reset_frame.pack(fill=tk.BOTH, expand=True, pady=5)
+
+        self.reset_button = tk.Button(self.reset_frame,
+                                      text="Reset to Schedule",
+                                      font=("Helvetica", 12, "bold"),
+                                      width=18,
+                                      height=2,
+                                      bg="blue",
+                                      fg="white",
+                                      command=self.reset_to_arduino_schedule)
+        self.reset_button.pack(pady=4)
+
+        self.fans_frame = tk.LabelFrame(self.relay_column_2, text="Fans", font=("Helvetica", 12, "bold"))
+        self.fans_frame.pack(fill=tk.BOTH, expand=True, pady=5)
+
+        self.misc_frame = tk.LabelFrame(self.relay_column_2, text="EC/pH Acquisition", font=("Helvetica", 12, "bold"))
+        self.misc_frame.pack(fill=tk.BOTH, expand=True, pady=5)
+
+        # Pack switches_frame inside center_frame
+        self.switches_frame.pack(in_=self.center_frame, fill=tk.BOTH, expand=True)
+
+        # Right frame for sensor data (leave untouched)
         self.right_frame = tk.Frame(self.main_frame, width=400, padx=20, pady=20)
         self.right_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
 
@@ -94,20 +134,39 @@ class HydroponicsGUI:
         self.float_bottom_label = tk.Label(self.float_frame, text="Bottom: --", font=("Helvetica", 12))
         self.float_bottom_label.pack()
 
-        # Manual controls
-        self.states = {
-            "lights_top": {"state": False, "device_code": "LT"},
-            "lights_bottom": {"state": False, "device_code": "LB"},
-            "pump_top": {"state": False, "device_code": "PT"},
-            "pump_bottom": {"state": False, "device_code": "PB"},
-        }
-        create_switch(self, "Lights (Top)", 0, "lights_top", "LT")
-        create_switch(self, "Lights (Bottom)", 1, "lights_bottom", "LB")
-        create_switch(self, "Pump (Top)", 2, "pump_top", "PT")
-        create_switch(self, "Pump (Bottom)", 3, "pump_bottom", "PB")
+        # Manual controls with custom style for switches
+        style = ttk.Style(self.root)
+        style.configure("Switch.TCheckbutton",
+                        font=("Helvetica", 12),
+                        padding=6,
+                        foreground="#333",
+                        background="#eee")
 
-        # Reset button
-        create_reset_button(self)
+        relay_definitions = [
+            ("Lights (Top)", "lights_top", "LT", self.lights_frame),
+            ("Lights (Bottom)", "lights_bottom", "LB", self.lights_frame),
+            ("Pump (Top)", "pump_top", "PT", self.pumps_frame),
+            ("Pump (Bottom)", "pump_bottom", "PB", self.pumps_frame),
+            ("Fan (Vent)", "fan_vent", "FV", self.fans_frame),
+            ("Fan (Circ)", "fan_circ", "FC", self.fans_frame),
+            ("Sensor Pump (Top)", "sensor_pump_top", "SPT", self.misc_frame),
+            ("Sensor Pump (Bottom)", "sensor_pump_bottom", "SPB", self.misc_frame),
+            ("Drain Actuator", "drain_actuator", "DA", self.misc_frame),
+        ]
+        self.states = {}
+        for label, key, code, parent in relay_definitions:
+            self.states[key] = {"state": False, "device_code": code}
+            button = tk.Button(parent,
+                               text=f"{label}\nTurn ON",
+                               font=("Helvetica", 12),
+                               width=18,
+                               height=3,
+                               bg="red",
+                               activebackground="darkred",
+                               fg="white",
+                               command=lambda k=key: self.toggle_switch(k))
+            button.pack(pady=4)
+            self.states[key]["button"] = button
 
         # Start clock
         update_clock(self)
@@ -124,21 +183,27 @@ class HydroponicsGUI:
             print(f"⚠ Error: {state_key} not found in self.states")
             return
 
-        info = self.states[state_key]
-        new_state = not info["state"]
-        info["state"] = new_state  # Toggle state
+        new_state = not self.states[state_key]["state"]
+        self.states[state_key]["state"] = new_state
 
-        # Update GUI button and indicator light
+        button = self.states[state_key]["button"]
+        label = button.cget('text').splitlines()[0]
         if new_state:
-            info["button"].config(text="ON", bg="darkgreen")
-            info["light"].delete("all")
-            info["light"].create_oval(2, 2, 18, 18, fill="green")
-            send_command_to_arduino(self.arduino, f"{info['device_code']}:ON\n")
+            button.config(
+                text=f"{label}\nTurn OFF",
+                bg="green",
+                activebackground="darkgreen",
+                fg="white"
+            )
+            send_command_to_arduino(self.arduino, f"{self.states[state_key]['device_code']}:ON\n")
         else:
-            info["button"].config(text="OFF", bg="darkgrey")
-            info["light"].delete("all")
-            info["light"].create_oval(2, 2, 18, 18, fill="red")
-            send_command_to_arduino(self.arduino, f"{info['device_code']}:OFF\n")
+            button.config(
+                text=f"{label}\nTurn ON",
+                bg="red",
+                activebackground="darkred",
+                fg="white"
+            )
+            send_command_to_arduino(self.arduino, f"{self.states[state_key]['device_code']}:OFF\n")
 
         print(f"🔄 Toggled {state_key} to {'ON' if new_state else 'OFF'}")
 
@@ -169,21 +234,26 @@ class HydroponicsGUI:
             # Split and extract values (relay states + sensor data)
             state_values = response.split(":")[1].split(",")
 
-            if len(state_values) != 10:
+            if len(state_values) != 12:
                 print(f"⚠ Warning: Unexpected number of values in state update: {state_values}")
                 return
 
             # Parse relay states and sensor data
-            light_top, light_bottom, pump_top, pump_bottom = map(int, state_values[:4])
-            temperature, humidity = map(int, state_values[4:6])
-            water_temp1, water_temp2 = map(float, state_values[6:8])
-            float_top, float_bottom = map(int, state_values[8:10])
+            light_top, light_bottom, pump_top, pump_bottom, fan_vent, fan_circ = map(int, state_values[:6])
+            temperature, humidity = map(int, state_values[6:8])
+            water_temp1, water_temp2 = map(float, state_values[8:10])
+            float_top, float_bottom = map(int, state_values[10:12])
 
             # Update GUI switch indicators
             self.set_gui_state("lights_top", light_top)
             self.set_gui_state("lights_bottom", light_bottom)
             self.set_gui_state("pump_top", pump_top)
             self.set_gui_state("pump_bottom", pump_bottom)
+            self.set_gui_state("fan_vent", fan_vent)
+            self.set_gui_state("fan_circ", fan_circ)
+
+            # Placeholder for sensor pump and drain actuator states if included in Arduino message
+            # For now, no state updates from Arduino for these devices
 
             # ✅ Update the connection indicator to green (since valid data was received)
             self.connection_indicator.delete("all")
@@ -194,8 +264,8 @@ class HydroponicsGUI:
             self.humidity_label.config(text=f"{humidity} %")
 
             # Update water temperature display
-            self.water_temp1_label.config(text=f"Sensor 1: {water_temp1:.1f} °C")
-            self.water_temp2_label.config(text=f"Sensor 2: {water_temp2:.1f} °C")
+            self.water_temp1_label.config(text=f"Top reservoir: {water_temp1:.1f} °C")
+            self.water_temp2_label.config(text=f"Bottom reservoir: {water_temp2:.1f} °C")
 
             self.float_top_label.config(text=f"Top: {'Okay' if float_top else 'Low'}")
             self.float_bottom_label.config(text=f"Bottom: {'Okay' if float_bottom else 'Low'}")
@@ -204,26 +274,25 @@ class HydroponicsGUI:
             print(f"⚠ Error parsing relay state: {e}")
 
     def set_gui_state(self, key, state):
-        """ Update button text and indicator color based on relay state. """
-        info = self.states[key]
-        button = info.get("button")
-        light = info.get("light")
-
+        """ Update BooleanVar based on relay state. """
+        self.states[key]["state"] = True if state == 1 else False
+        btn = self.states[key]["button"]
+        label = btn.cget("text").splitlines()[0]
         if state == 1:
-            info["state"] = True
-            button.config(text="ON", bg="darkgreen")
-            light.delete("all")
-            light.create_oval(2, 2, 18, 18, fill="green")
+            btn.config(
+                text=f"{label}\nTurn OFF",
+                bg="green",
+                activebackground="darkgreen",
+                fg="white"
+            )
         else:
-            info["state"] = False
-            button.config(text="OFF", bg="darkgrey")
-            light.delete("all")
-            light.create_oval(2, 2, 18, 18, fill="red")
+            btn.config(
+                text=f"{label}\nTurn ON",
+                bg="red",
+                activebackground="darkred",
+                fg="white"
+            )
 
-    def reset_to_arduino_schedule(self):
-        """Reset all devices to follow Arduino’s schedule."""
-        print("Resetting to Arduino schedule...")
-        send_command_to_arduino(self.arduino, "RESET_SCHEDULE\n")
 
     def set_time_on_arduino(self):
         """Send the current system time to the Arduino."""
@@ -234,6 +303,14 @@ class HydroponicsGUI:
                 send_command_to_arduino(self.arduino, f"SET_TIME:{current_time}\n")
             except Exception as e:
                 print(f"Error sending time to Arduino: {e}")
+
+    def reset_to_arduino_schedule(self):
+        """Send a reset command to the Arduino to resume scheduled operation."""
+        try:
+            print("🔄 Sending reset to schedule command to Arduino")
+            send_command_to_arduino(self.arduino, "RESET_SCHEDULE\n")
+        except Exception as e:
+            print(f"⚠ Error sending reset command: {e}")
 
 
 def main():

@@ -36,7 +36,7 @@ fi
 # Run the Python script
 if [ -f "$CODE_DIR/$SCRIPT_NAME" ]; then
     echo "Running the main script: $SCRIPT_NAME..."
-    python "$CODE_DIR/$SCRIPT_NAME"
+    lxterminal -e "bash -c 'python \"$CODE_DIR/$SCRIPT_NAME\"; exec bash'"
 else
     echo "Error: $SCRIPT_NAME not found in $CODE_DIR."
     deactivate

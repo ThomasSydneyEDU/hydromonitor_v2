@@ -15,7 +15,7 @@
 #define FLOAT_SENSOR_BOTTOM 6
 
 #define DHTPIN 3  // Air temp and humidity sensor
-#define ONE_WIRE_BUS 4  // Water temperature probes
+#define ONE_WIRE_BUS 2  // Water temperature probes
 
 // Include DHT Sensor Library
 #include <Adafruit_Sensor.h>

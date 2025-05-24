@@ -25,7 +25,6 @@
 #include <DallasTemperature.h>
 
 // Define DHT Sensor Pin & Type
-#define DHTPIN 3
 #define DHTTYPE DHT11
 DHT dht(DHTPIN, DHTTYPE);
 

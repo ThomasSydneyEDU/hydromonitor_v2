@@ -29,7 +29,6 @@
 #define DHTTYPE DHT11
 DHT dht(DHTPIN, DHTTYPE);
 
-#define ONE_WIRE_BUS 4
 OneWire oneWire(ONE_WIRE_BUS);
 DallasTemperature sensors(&oneWire);
 DeviceAddress sensor1, sensor2;

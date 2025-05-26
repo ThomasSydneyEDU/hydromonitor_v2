@@ -55,6 +55,10 @@ class HydroponicsGUI:
             "lights_bottom": {"state": False, "schedule": "", "description_label": None},
             "pump_top": {"state": False, "schedule": "", "description_label": None},
             "pump_bottom": {"state": False, "schedule": "", "description_label": None},
+            "fan_top": {"state": False, "schedule": "", "description_label": None},
+            "fan_bottom": {"state": False, "schedule": "", "description_label": None},
+            "fan_vent": {"state": False, "schedule": "", "description_label": None},
+            "fan_circulation": {"state": False, "schedule": "", "description_label": None},
         }
         create_switch(self, "Lights (Top)", 0, "lights_top", "LT")
         create_switch(self, "Lights (Bottom)", 1, "lights_bottom", "LB")
@@ -110,6 +114,8 @@ class HydroponicsGUI:
         # Ensure all switches are OFF at startup
         self.initialize_switches()
 
+        self.schedule_status_write()
+
     def initialize_switches(self):
         """Ensure all switches are OFF at startup."""
         print("Initializing all switches to OFF...")
@@ -124,6 +130,38 @@ class HydroponicsGUI:
         """Turn all switches off."""
         print("Resetting all switches to OFF...")
         self.initialize_switches()
+
+    def write_status_to_file(self):
+        import json, os, datetime
+        status = {
+            "Air Temp": getattr(self, "air_temp", "Disconnected"),
+            "Water Temp Top": getattr(self, "water_temp_top", "Disconnected"),
+            "Water Temp Bottom": getattr(self, "water_temp_bottom", "Disconnected"),
+            "EC": self.ec_label.cget("text").replace("EC: ", "").strip(),
+            "pH": self.ph_label.cget("text").replace("pH: ", "").strip(),
+            "Top Float": self.water_level_top_label.cget("text").replace("Water Level (Top): ", "").strip(),
+            "Bottom Float": self.water_level_bottom_label.cget("text").replace("Water Level (Bottom): ", "").strip(),
+            "Relay Top Light": "OK" if self.states.get("lights_top", {}).get("state") else "Low",
+            "Relay Bottom Light": "OK" if self.states.get("lights_bottom", {}).get("state") else "Low",
+            "Relay Top Pump": "OK" if self.states.get("pump_top", {}).get("state") else "Low",
+            "Relay Bottom Pump": "OK" if self.states.get("pump_bottom", {}).get("state") else "Low",
+            "Relay Top Fan": "OK" if self.states.get("fan_top", {}).get("state") else "Low",
+            "Relay Bottom Fan": "OK" if self.states.get("fan_bottom", {}).get("state") else "Low",
+            "Relay Vent Fan": "OK" if self.states.get("fan_vent", {}).get("state") else "Low",
+            "Relay Circulation Fan": "OK" if self.states.get("fan_circulation", {}).get("state") else "Low",
+            "timestamp": datetime.datetime.now().isoformat()
+        }
+        output_path = "/home/pi/hydro_status/status.json"
+        try:
+            os.makedirs(os.path.dirname(output_path), exist_ok=True)
+            with open(output_path, "w") as f:
+                json.dump(status, f)
+        except Exception as e:
+            print("Failed to write status:", e)
+
+    def schedule_status_write(self):
+        self.write_status_to_file()
+        self.root.after(60000, self.schedule_status_write)
 
 
 def main():

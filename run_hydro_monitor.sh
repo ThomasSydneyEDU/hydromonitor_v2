@@ -53,4 +53,15 @@ fi
 echo "Deactivating virtual environment..."
 deactivate
 
+
+# Start the Flask web dashboard in the background if not already running
+if ! pgrep -f "python app.py" > /dev/null; then
+    echo "Starting Flask web server..."
+    cd "$REPO_DIR/hydro_dashboard" || exit
+    nohup python app.py > flask.log 2>&1 &
+    cd ../..
+else
+    echo "Flask server is already running."
+fi
+
 echo "==== Script Completed ===="

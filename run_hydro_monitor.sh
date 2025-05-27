@@ -58,7 +58,7 @@ deactivate
 if ! pgrep -f "python app.py" > /dev/null; then
     echo "Starting Flask web server..."
     cd "$REPO_DIR/hydro_dashboard" || exit
-    nohup python app.py > flask.log 2>&1 &
+    nohup "$VENV_DIR/bin/python" app.py > flask.log 2>&1 &
     cd ../..
 else
     echo "Flask server is already running."

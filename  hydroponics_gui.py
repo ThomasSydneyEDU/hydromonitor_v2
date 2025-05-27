@@ -151,9 +151,11 @@ class HydroponicsGUI:
             "Relay Circulation Fan": "OK" if self.states.get("fan_circulation", {}).get("state") else "Low",
             "timestamp": datetime.datetime.now().isoformat()
         }
-        output_path = "/home/pi/hydro_status/status.json"
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        output_path = os.path.join(script_dir, "hydro_dashboard", "status.json")
         try:
             os.makedirs(os.path.dirname(output_path), exist_ok=True)
+            print(f"Writing status to {output_path}")
             with open(output_path, "w") as f:
                 json.dump(status, f)
         except Exception as e:

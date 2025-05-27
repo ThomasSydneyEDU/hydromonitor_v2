@@ -1,21 +1,16 @@
 from flask import Flask, render_template, Response
 import cv2
+import os
+import json
 
 app = Flask(__name__)
 
-# Simulated sensor data
-sensor_data = {
-    'Air Temp': '22.3°C',
-    'Water Temp': '19.1°C',
-    'pH': '6.4',
-    'EC': '1.2 mS/cm',
-    'Top Float': 'Low',
-    'Bottom Float': 'OK'
-}
-
 # Modified frame generator to support multiple cameras
-def generate_frames(camera_index):
-    cap = cv2.VideoCapture(camera_index)
+def generate_frames(camera_source):
+    cap = cv2.VideoCapture(camera_source)
+    if not cap.isOpened():
+        print(f"Failed to open {camera_source}")
+        return
     while True:
         success, frame = cap.read()
         if not success:
@@ -28,15 +23,23 @@ def generate_frames(camera_index):
 
 @app.route('/')
 def index():
-    return render_template('index.html', data=sensor_data)
+    try:
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        status_path = os.path.join(script_dir, 'status.json')
+        with open(status_path) as f:
+            data = json.load(f)
+    except Exception as e:
+        print(f"Failed to load sensor data: {e}")
+        data = {}
+    return render_template('index.html', data=data)
 
 @app.route('/video_feed1')
 def video_feed1():
-    return Response(generate_frames(0), mimetype='multipart/x-mixed-replace; boundary=frame')
+    return Response(generate_frames("/dev/video0"), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 @app.route('/video_feed2')
 def video_feed2():
-    return Response(generate_frames(1), mimetype='multipart/x-mixed-replace; boundary=frame')
+    return Response(generate_frames("/dev/video2"), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5050, debug=True)

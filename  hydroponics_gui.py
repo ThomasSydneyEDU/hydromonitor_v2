@@ -132,6 +132,7 @@ class HydroponicsGUI:
         self.initialize_switches()
 
     def write_status_to_file(self):
+        print("⚠️ write_status_to_file called")
         import json, os, datetime
         status = {
             "Air Temp": getattr(self, "air_temp", "Disconnected"),

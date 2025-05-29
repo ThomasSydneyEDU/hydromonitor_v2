@@ -8,8 +8,8 @@
 <body>
     <h1>Hydroponics System Dashboard</h1>
 
-    {% if data.get('timestamp') %}
-        <p style="text-align: center; font-style: italic;">Last updated: {{ data['timestamp'] }}</p>
+    {% if status.get('timestamp') %}
+        <p style="text-align: center; font-style: italic;">Last updated: {{ status['timestamp'] }}</p>
     {% endif %}
 
     <div class="container">
@@ -24,37 +24,37 @@
         <div class="sensors">
             <h2>Sensor Readings</h2>
 <ul>
-    {% set temp = data.get('Air Temp', 'Disconnected') %}
+    {% set temp = status.get('Air Temp', 'Disconnected') %}
     <li><strong>Air Temp:</strong>
         <span style='color: "{{ "gray" if temp == "Disconnected" else "red" if temp|float > 30 else "orange" if temp|float > 25 else "green" }}"'>{{ temp }}</span>
     </li>
 
-    {% set temp = data.get('Water Temp Top', 'Disconnected') %}
+    {% set temp = status.get('Water Temp Top', 'Disconnected') %}
     <li><strong>Water Temp (Top):</strong>
         <span style='color: "{{ "gray" if temp == "Disconnected" else "red" if temp|float > 30 else "orange" if temp|float > 25 else "green" }}"'>{{ temp }}</span>
     </li>
 
-    {% set temp = data.get('Water Temp Bottom', 'Disconnected') %}
+    {% set temp = status.get('Water Temp Bottom', 'Disconnected') %}
     <li><strong>Water Temp (Bottom):</strong>
         <span style='color: "{{ "gray" if temp == "Disconnected" else "red" if temp|float > 30 else "orange" if temp|float > 25 else "green" }}"'>{{ temp }}</span>
     </li>
 
-    {% set ec = data.get('EC', 'Disconnected') %}
+    {% set ec = status.get('EC', 'Disconnected') %}
     <li><strong>EC:</strong>
         <span style='color: "{{ "gray" if ec == "Disconnected" else "red" if ec|float > 2 else "orange" if ec|float > 1.5 else "green" }}"'>{{ ec }}</span>
     </li>
 
-    {% set ph = data.get('pH', 'Disconnected') %}
+    {% set ph = status.get('pH', 'Disconnected') %}
     <li><strong>pH:</strong>
         <span style='color: "{{ "gray" if ph == "Disconnected" else "red" if ph|float < 5.5 or ph|float > 7.5 else "orange" if 5.5 <= ph|float < 6.0 or 7.0 < ph|float <= 7.5 else "green" }}"'>{{ ph }}</span>
     </li>
 
-    {% set top_float = data.get('Top Float', 'Disconnected') %}
+    {% set top_float = status.get('Top Float', 'Disconnected') %}
     <li><strong>Top Float:</strong>
         <span style='color: "{{ "gray" if top_float == "Disconnected" else "red" if top_float == "Low" else "green" if top_float == "OK" else "black" }}"'>{{ top_float }}</span>
     </li>
 
-    {% set bottom_float = data.get('Bottom Float', 'Disconnected') %}
+    {% set bottom_float = status.get('Bottom Float', 'Disconnected') %}
     <li><strong>Bottom Float:</strong>
         <span style='color: "{{ "gray" if bottom_float == "Disconnected" else "red" if bottom_float == "Low" else "green" if bottom_float == "OK" else "black" }}"'>{{ bottom_float }}</span>
     </li>
@@ -63,7 +63,7 @@
 <h2>Relay Status</h2>
 <ul>
     {% for relay in ['Top Light', 'Bottom Light', 'Top Pump', 'Bottom Pump'] %}
-        {% set value = data.get('Relay ' + relay, 'Disconnected') %}
+        {% set value = status.get('Relay ' + relay, 'Disconnected') %}
         <li><strong>{{ relay }}:</strong>
             <span style='color: "{{ "gray" if value == "Disconnected" else "red" if value == "Low" else "green" if value == "OK" else "black" }}"'>{{ value }}</span>
         </li>
@@ -73,7 +73,7 @@
 <h2>Fan Status</h2>
 <ul>
     {% for fan in ['Top Fan', 'Bottom Fan', 'Vent Fan', 'Circulation Fan'] %}
-        {% set value = data.get('Relay ' + fan, 'Disconnected') %}
+        {% set value = status.get('Relay ' + fan, 'Disconnected') %}
         <li><strong>{{ fan }}:</strong>
             <span style='color: "{{ "gray" if value == "Disconnected" else "red" if value == "Low" else "green" if value == "OK" else "black" }}"'>{{ value }}</span>
         </li>

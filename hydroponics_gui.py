@@ -2,6 +2,8 @@ import tkinter as tk
 import tkinter.ttk as ttk
 import threading
 from datetime import datetime
+import json
+from flask import Flask, jsonify, request, render_template
 from gui_helpers import (
     create_switch,
     create_reset_button,
@@ -178,6 +180,14 @@ class HydroponicsGUI:
 
         # Schedule periodic status write
         self.schedule_status_write()
+
+        self.start_flask_server()
+
+    def start_flask_server(self):
+        def run_flask():
+            app.config['GUI_INSTANCE'] = self
+            app.run(host='0.0.0.0', port=5050, debug=False, use_reloader=False)
+        threading.Thread(target=run_flask, daemon=True).start()
 
     def schedule_status_write(self):
         self.write_status_to_file()
@@ -367,6 +377,44 @@ class HydroponicsGUI:
             print(f"⚠ Error sending reset command: {e}")
 
 
+app = Flask(__name__, static_folder="static", template_folder="templates")
+
+@app.route("/status")
+def get_status():
+    gui = app.config.get('GUI_INSTANCE')
+    if not gui:
+        return jsonify({"error": "GUI not initialized"}), 500
+
+    status = {
+        "Air Temp": gui.temperature_label.cget("text"),
+        "Humidity": gui.humidity_label.cget("text"),
+        "Water Temp Top": gui.water_temp1_label.cget("text"),
+        "Water Temp Bottom": gui.water_temp2_label.cget("text"),
+        "Top Float": gui.float_top_label.cget("text"),
+        "Bottom Float": gui.float_bottom_label.cget("text"),
+        "timestamp": datetime.now().isoformat()
+    }
+
+    for key, info in gui.states.items():
+        status[f"Relay {key.replace('_', ' ').title()}"] = "ON" if info["state"] else "OFF"
+
+    return jsonify(status)
+
+@app.route("/toggle", methods=["POST"])
+def toggle_device():
+    gui = app.config.get('GUI_INSTANCE')
+    if not gui:
+        return jsonify({"error": "GUI not initialized"}), 500
+
+    data = request.get_json()
+    device = data.get("device")
+    if not device or device not in gui.states:
+        return jsonify({"error": "Invalid or unknown device"}), 400
+
+    gui.toggle_switch(device)
+    return jsonify({"success": True, "new_state": gui.states[device]["state"]})
+
+
 def main():
     arduino = connect_to_arduino()
     root = tk.Tk()
@@ -378,3 +426,23 @@ def main():
 
 if __name__ == "__main__":
     main()
+@app.route("/")
+def index():
+    gui = app.config.get('GUI_INSTANCE')
+    if not gui:
+        return "GUI not initialized", 500
+
+    status = {
+        "Air_Temp": gui.temperature_label.cget("text"),
+        "Humidity": gui.humidity_label.cget("text"),
+        "Water_Temp_Top": gui.water_temp1_label.cget("text"),
+        "Water_Temp_Bottom": gui.water_temp2_label.cget("text"),
+        "Top_Float": gui.float_top_label.cget("text"),
+        "Bottom_Float": gui.float_bottom_label.cget("text"),
+        "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    }
+
+    for key, info in gui.states.items():
+        status[f"Relay_{key}"] = "ON" if info["state"] else "OFF"
+
+    return render_template("index.html", status=status)

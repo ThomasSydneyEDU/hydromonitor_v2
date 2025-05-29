@@ -9,7 +9,7 @@ REPO_DIR="$BASE_DIR/hydromonitor_v2"
 VENV_DIR="$REPO_DIR/venv"
 REPO_URL="https://github.com/ThomasSydneyEDU/hydromonitor_v2.git"
 REQUIREMENTS_FILE="$REPO_DIR/requirements.txt"
-SCRIPT_NAME="pi_pumpAndLightcontrol.py" # Main script to run
+SCRIPT_NAME="hydroponics_gui.py" # Main script to run
 
 echo "==== Hydro Monitor Script ===="
 

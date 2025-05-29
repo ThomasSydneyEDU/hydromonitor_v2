@@ -28,8 +28,9 @@ def index():
         status_path = os.path.join(script_dir, 'status.json')
         with open(status_path) as f:
             data = json.load(f)
+        print(f"✅ Loaded status.json at {data.get('timestamp', 'unknown time')}")
     except Exception as e:
-        print(f"Failed to load sensor data: {e}")
+        print(f"❌ Failed to load sensor data: {e}")
         data = {}
     return render_template('index.html', data=data)
 

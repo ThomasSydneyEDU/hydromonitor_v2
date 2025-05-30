@@ -424,8 +424,7 @@ def main():
         arduino.close()
 
 
-if __name__ == "__main__":
-    main()
+
 @app.route("/")
 def index():
     gui = app.config.get('GUI_INSTANCE')
@@ -446,3 +445,6 @@ def index():
         status[f"Relay_{key}"] = "ON" if info["state"] else "OFF"
 
     return render_template("index.html", status=status)
+
+if __name__ == "__main__":
+    main()

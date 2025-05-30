@@ -416,9 +416,9 @@ def toggle_device():
 
 
 # ---- Video feed routes ----
-@app.route("/video_feed")
-def video_feed():
-    return "Video feed not implemented", 200
+@app.route("/video_feed1")
+def video_feed1():
+    return "Video feed 1 not implemented", 200
 
 @app.route("/video_feed2")
 def video_feed2():

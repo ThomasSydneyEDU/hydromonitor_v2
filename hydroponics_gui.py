@@ -189,6 +189,21 @@ class HydroponicsGUI:
         def run_flask():
             import os
             import json
+            from flask import Response
+            import cv2
+
+            def generate_video(device_path):
+                cap = cv2.VideoCapture(device_path)
+                if not cap.isOpened():
+                    raise RuntimeError(f"Could not open video device {device_path}")
+                while True:
+                    success, frame = cap.read()
+                    if not success:
+                        break
+                    ret, buffer = cv2.imencode('.jpg', frame)
+                    frame = buffer.tobytes()
+                    yield (b'--frame\r\n'
+                           b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
             @app.route("/")
             def index():
@@ -229,11 +244,13 @@ class HydroponicsGUI:
 
             @app.route("/video_feed1")
             def video_feed1():
-                return "Video feed 1 not implemented", 200
+                return Response(generate_video("/dev/video0"),
+                                mimetype="multipart/x-mixed-replace; boundary=frame")
 
             @app.route("/video_feed2")
             def video_feed2():
-                return "Video feed 2 not implemented", 200
+                return Response(generate_video("/dev/video2"),
+                                mimetype="multipart/x-mixed-replace; boundary=frame")
 
             app.run(host='0.0.0.0', port=5050, debug=True, use_reloader=False)
         threading.Thread(target=run_flask, daemon=True).start()

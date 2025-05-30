@@ -186,6 +186,71 @@ class HydroponicsGUI:
     def start_flask_server(self):
         def run_flask():
             app.config['GUI_INSTANCE'] = self
+
+            @app.route("/")
+            def index():
+                gui = app.config.get('GUI_INSTANCE')
+                if not gui:
+                    return "GUI not initialized", 500
+
+                status = {
+                    "Air_Temp": gui.temperature_label.cget("text"),
+                    "Humidity": gui.humidity_label.cget("text"),
+                    "Water_Temp_Top": gui.water_temp1_label.cget("text"),
+                    "Water_Temp_Bottom": gui.water_temp2_label.cget("text"),
+                    "Top_Float": gui.float_top_label.cget("text"),
+                    "Bottom_Float": gui.float_bottom_label.cget("text"),
+                    "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                }
+
+                for key, info in gui.states.items():
+                    status[f"Relay_{key}"] = "ON" if info["state"] else "OFF"
+
+                return render_template("index.html", status=status)
+
+            @app.route("/status")
+            def get_status():
+                gui = app.config.get('GUI_INSTANCE')
+                if not gui:
+                    return jsonify({"error": "GUI not initialized"}), 500
+
+                status = {
+                    "Air Temp": gui.temperature_label.cget("text"),
+                    "Humidity": gui.humidity_label.cget("text"),
+                    "Water Temp Top": gui.water_temp1_label.cget("text"),
+                    "Water Temp Bottom": gui.water_temp2_label.cget("text"),
+                    "Top Float": gui.float_top_label.cget("text"),
+                    "Bottom Float": gui.float_bottom_label.cget("text"),
+                    "timestamp": datetime.now().isoformat()
+                }
+
+                for key, info in gui.states.items():
+                    status[f"Relay {key.replace('_', ' ').title()}"] = "ON" if info["state"] else "OFF"
+
+                return jsonify(status)
+
+            @app.route("/toggle", methods=["POST"])
+            def toggle_device():
+                gui = app.config.get('GUI_INSTANCE')
+                if not gui:
+                    return jsonify({"error": "GUI not initialized"}), 500
+
+                data = request.get_json()
+                device = data.get("device")
+                if not device or device not in gui.states:
+                    return jsonify({"error": "Invalid or unknown device"}), 400
+
+                gui.toggle_switch(device)
+                return jsonify({"success": True, "new_state": gui.states[device]["state"]})
+
+            @app.route("/video_feed1")
+            def video_feed1():
+                return "Video feed 1 not implemented", 200
+
+            @app.route("/video_feed2")
+            def video_feed2():
+                return "Video feed 2 not implemented", 200
+
             app.run(host='0.0.0.0', port=5050, debug=True, use_reloader=False)
         threading.Thread(target=run_flask, daemon=True).start()
 
@@ -377,84 +442,19 @@ class HydroponicsGUI:
             print(f"⚠ Error sending reset command: {e}")
 
 
+
+
 app = Flask(__name__, static_folder="static", template_folder="templates")
-
-@app.route("/status")
-def get_status():
-    gui = app.config.get('GUI_INSTANCE')
-    if not gui:
-        return jsonify({"error": "GUI not initialized"}), 500
-
-    status = {
-        "Air Temp": gui.temperature_label.cget("text"),
-        "Humidity": gui.humidity_label.cget("text"),
-        "Water Temp Top": gui.water_temp1_label.cget("text"),
-        "Water Temp Bottom": gui.water_temp2_label.cget("text"),
-        "Top Float": gui.float_top_label.cget("text"),
-        "Bottom Float": gui.float_bottom_label.cget("text"),
-        "timestamp": datetime.now().isoformat()
-    }
-
-    for key, info in gui.states.items():
-        status[f"Relay {key.replace('_', ' ').title()}"] = "ON" if info["state"] else "OFF"
-
-    return jsonify(status)
-
-@app.route("/toggle", methods=["POST"])
-def toggle_device():
-    gui = app.config.get('GUI_INSTANCE')
-    if not gui:
-        return jsonify({"error": "GUI not initialized"}), 500
-
-    data = request.get_json()
-    device = data.get("device")
-    if not device or device not in gui.states:
-        return jsonify({"error": "Invalid or unknown device"}), 400
-
-    gui.toggle_switch(device)
-    return jsonify({"success": True, "new_state": gui.states[device]["state"]})
-
-
-# ---- Video feed routes ----
-@app.route("/video_feed1")
-def video_feed1():
-    return "Video feed 1 not implemented", 200
-
-@app.route("/video_feed2")
-def video_feed2():
-    return "Video feed 2 not implemented", 200
 
 
 def main():
     arduino = connect_to_arduino()
     root = tk.Tk()
-    app = HydroponicsGUI(root, arduino)
+    gui = HydroponicsGUI(root, arduino)
     root.mainloop()
     if arduino:
         arduino.close()
 
-
-
-@app.route("/")
-def index():
-    gui = app.config.get('GUI_INSTANCE')
-    if not gui:
-        return "GUI not initialized", 500
-
-    status = {
-        "Air_Temp": gui.temperature_label.cget("text"),
-        "Humidity": gui.humidity_label.cget("text"),
-        "Water_Temp_Top": gui.water_temp1_label.cget("text"),
-        "Water_Temp_Bottom": gui.water_temp2_label.cget("text"),
-        "Top_Float": gui.float_top_label.cget("text"),
-        "Bottom_Float": gui.float_bottom_label.cget("text"),
-        "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    }
-
-    for key, info in gui.states.items():
-        status[f"Relay_{key}"] = "ON" if info["state"] else "OFF"
-
-    return render_template("index.html", status=status)
 
 if __name__ == "__main__":
     main()

@@ -183,56 +183,34 @@ class HydroponicsGUI:
         # Schedule periodic status write
         self.schedule_status_write()
 
-        self.start_flask_server()
+        # self.start_flask_server()
 
     def start_flask_server(self):
         def run_flask():
-            global GUI_INSTANCE
-            GUI_INSTANCE = self
+            import os
+            import json
 
             @app.route("/")
             def index():
-                global GUI_INSTANCE
-                gui = GUI_INSTANCE
-                if not gui:
-                    return "GUI not initialized", 500
-
-                status = {
-                    "Air_Temp": gui.temperature_label.cget("text"),
-                    "Humidity": gui.humidity_label.cget("text"),
-                    "Water_Temp_Top": gui.water_temp1_label.cget("text"),
-                    "Water_Temp_Bottom": gui.water_temp2_label.cget("text"),
-                    "Top_Float": gui.float_top_label.cget("text"),
-                    "Bottom_Float": gui.float_bottom_label.cget("text"),
-                    "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                }
-
-                for key, info in gui.states.items():
-                    status[f"Relay_{key}"] = "ON" if info["state"] else "OFF"
-
-                return render_template("index.html", status=status)
+                try:
+                    script_dir = os.path.dirname(os.path.abspath(__file__))
+                    status_path = os.path.join(script_dir, "hydro_dashboard", "status.json")
+                    with open(status_path, "r") as f:
+                        status = json.load(f)
+                    return render_template("index.html", status=status)
+                except Exception as e:
+                    return f"Failed to load status: {e}", 500
 
             @app.route("/status")
             def get_status():
-                global GUI_INSTANCE
-                gui = GUI_INSTANCE
-                if not gui:
-                    return jsonify({"error": "GUI not initialized"}), 500
-
-                status = {
-                    "Air Temp": gui.temperature_label.cget("text"),
-                    "Humidity": gui.humidity_label.cget("text"),
-                    "Water Temp Top": gui.water_temp1_label.cget("text"),
-                    "Water Temp Bottom": gui.water_temp2_label.cget("text"),
-                    "Top Float": gui.float_top_label.cget("text"),
-                    "Bottom Float": gui.float_bottom_label.cget("text"),
-                    "timestamp": datetime.now().isoformat()
-                }
-
-                for key, info in gui.states.items():
-                    status[f"Relay {key.replace('_', ' ').title()}"] = "ON" if info["state"] else "OFF"
-
-                return jsonify(status)
+                try:
+                    script_dir = os.path.dirname(os.path.abspath(__file__))
+                    status_path = os.path.join(script_dir, "hydro_dashboard", "status.json")
+                    with open(status_path, "r") as f:
+                        status = json.load(f)
+                    return jsonify(status)
+                except Exception as e:
+                    return jsonify({"error": f"Failed to load status: {e}"}), 500
 
             @app.route("/toggle", methods=["POST"])
             def toggle_device():
@@ -323,6 +301,7 @@ class HydroponicsGUI:
             send_command_to_arduino(self.arduino, f"{self.states[state_key]['device_code']}:OFF\n")
 
         print(f"🔄 Toggled {state_key} to {'ON' if new_state else 'OFF'}")
+        self.write_status_to_file()
 
     def start_relay_state_listener(self):
         """ Continuously listen for state updates from the Arduino. """
@@ -405,6 +384,8 @@ class HydroponicsGUI:
             self.float_top_label.config(text=f"Top: {'Okay' if float_top else 'Low'}")
             self.float_bottom_label.config(text=f"Bottom: {'Okay' if float_bottom else 'Low'}")
 
+            self.write_status_to_file()
+
         except Exception as e:
             print(f"⚠ Error parsing relay state: {e}")
 
@@ -457,6 +438,7 @@ def main():
     arduino = connect_to_arduino()
     root = tk.Tk()
     gui = HydroponicsGUI(root, arduino)
+    gui.start_flask_server()
     root.mainloop()
     if arduino:
         arduino.close()

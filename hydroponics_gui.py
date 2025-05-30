@@ -194,6 +194,9 @@ class HydroponicsGUI:
 
             def generate_video(device_path):
                 cap = cv2.VideoCapture(device_path)
+                # Set lower resolution to reduce USB bandwidth
+                cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+                cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
                 if not cap.isOpened():
                     raise RuntimeError(f"Could not open video device {device_path}")
                 while True:

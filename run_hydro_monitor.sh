@@ -37,6 +37,9 @@ fi
 echo "Activating virtual environment..."
 source "$VENV_DIR/bin/activate"
 
+# Change to the repository directory
+cd "$REPO_DIR"
+
 # Install required packages
 if [ -f "$REQUIREMENTS_FILE" ]; then
     echo "Installing required packages from requirements.txt..."
@@ -47,11 +50,11 @@ else
 fi
 
 # Run the Python script
-if [ -f "$REPO_DIR/$SCRIPT_NAME" ]; then
+if [ -f "$SCRIPT_NAME" ]; then
     echo "Running the main script: $SCRIPT_NAME..."
     LOG_FILE="$LOG_DIR/gui_$(date +'%Y%m%d_%H%M%S').log"
     echo "Logging output to $LOG_FILE"
-    nohup python "$REPO_DIR/$SCRIPT_NAME" > "$LOG_FILE" 2>&1 &
+    nohup python "$SCRIPT_NAME" > "$LOG_FILE" 2>&1 &
 else
     echo "Error: $SCRIPT_NAME not found in the repository."
     exit 1

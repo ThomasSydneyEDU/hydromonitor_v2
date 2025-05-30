@@ -3,7 +3,7 @@
 <head>
     <title>Hydroponics Monitor</title>
     <link rel="stylesheet" href="/static/style.css">
-    <meta http-equiv="refresh" content="30">
+</head>
 </head>
 <body>
     <h1>Hydroponics System Dashboard</h1>
@@ -81,5 +81,76 @@
 </ul>
         </div>
     </div>
+<script>
+  async function fetchStatus() {
+    try {
+      const response = await fetch("/status");
+      const data = await response.json();
+
+      const updateText = (id, value) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = value;
+      };
+
+      const updateColor = (id, value, thresholds) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+
+        let color = "black";
+        if (value === "Disconnected") {
+          color = "gray";
+        } else {
+          let val = parseFloat(value);
+          if (isNaN(val)) {
+            color = "black";
+          } else {
+            color = thresholds.find(t => t.cond(val)).color;
+          }
+        }
+        el.style.color = color;
+      };
+
+      for (const [key, value] of Object.entries(data)) {
+        const id = key.replace(/\s+/g, '_');
+        updateText(id, value);
+      }
+
+      updateColor('Air_Temp', data['Air Temp'], [
+        { cond: v => v > 30, color: 'red' },
+        { cond: v => v > 25, color: 'orange' },
+        { cond: v => true, color: 'green' }
+      ]);
+
+      updateColor('Water_Temp_Top', data['Water Temp Top'], [
+        { cond: v => v > 30, color: 'red' },
+        { cond: v => v > 25, color: 'orange' },
+        { cond: v => true, color: 'green' }
+      ]);
+
+      updateColor('Water_Temp_Bottom', data['Water Temp Bottom'], [
+        { cond: v => v > 30, color: 'red' },
+        { cond: v => v > 25, color: 'orange' },
+        { cond: v => true, color: 'green' }
+      ]);
+
+      updateColor('EC', data['EC'], [
+        { cond: v => v > 2, color: 'red' },
+        { cond: v => v > 1.5, color: 'orange' },
+        { cond: v => true, color: 'green' }
+      ]);
+
+      updateColor('pH', data['pH'], [
+        { cond: v => v < 5.5 || v > 7.5, color: 'red' },
+        { cond: v => (v >= 5.5 && v < 6.0) || (v > 7.0 && v <= 7.5), color: 'orange' },
+        { cond: v => true, color: 'green' }
+      ]);
+    } catch (err) {
+      console.error("Failed to fetch status:", err);
+    }
+  }
+
+  setInterval(fetchStatus, 5000);
+  fetchStatus();
+</script>
 </body>
 </html>

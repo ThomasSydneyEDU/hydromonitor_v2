@@ -186,7 +186,7 @@ class HydroponicsGUI:
     def start_flask_server(self):
         def run_flask():
             app.config['GUI_INSTANCE'] = self
-            app.run(host='0.0.0.0', port=5050, debug=False, use_reloader=False)
+            app.run(host='0.0.0.0', port=5050, debug=True, use_reloader=False)
         threading.Thread(target=run_flask, daemon=True).start()
 
     def schedule_status_write(self):
@@ -413,6 +413,16 @@ def toggle_device():
 
     gui.toggle_switch(device)
     return jsonify({"success": True, "new_state": gui.states[device]["state"]})
+
+
+# ---- Video feed routes ----
+@app.route("/video_feed")
+def video_feed():
+    return "Video feed not implemented", 200
+
+@app.route("/video_feed2")
+def video_feed2():
+    return "Video feed 2 not implemented", 200
 
 
 def main():

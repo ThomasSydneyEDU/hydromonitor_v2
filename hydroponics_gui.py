@@ -262,7 +262,7 @@ class HydroponicsGUI:
 
         # Add relay statuses
         for key, info in self.states.items():
-            status[f"Relay {key.replace('_', ' ').title()}"] = "OK" if info["state"] else "Low"
+            status[f"Relay {key.replace('_', ' ').title()}"] = "ON" if info["state"] else "OFF"
 
         try:
             os.makedirs(os.path.dirname(output_path), exist_ok=True)

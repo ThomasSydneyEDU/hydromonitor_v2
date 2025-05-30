@@ -12,6 +12,8 @@ from gui_helpers import (
 )
 from arduino_helpers import connect_to_arduino, send_command_to_arduino
 
+GUI_INSTANCE = None
+
 
 class HydroponicsGUI:
     def __init__(self, root, arduino):
@@ -185,11 +187,13 @@ class HydroponicsGUI:
 
     def start_flask_server(self):
         def run_flask():
-            app.config['GUI_INSTANCE'] = self
+            global GUI_INSTANCE
+            GUI_INSTANCE = self
 
             @app.route("/")
             def index():
-                gui = app.config.get('GUI_INSTANCE')
+                global GUI_INSTANCE
+                gui = GUI_INSTANCE
                 if not gui:
                     return "GUI not initialized", 500
 
@@ -210,7 +214,8 @@ class HydroponicsGUI:
 
             @app.route("/status")
             def get_status():
-                gui = app.config.get('GUI_INSTANCE')
+                global GUI_INSTANCE
+                gui = GUI_INSTANCE
                 if not gui:
                     return jsonify({"error": "GUI not initialized"}), 500
 
@@ -231,7 +236,8 @@ class HydroponicsGUI:
 
             @app.route("/toggle", methods=["POST"])
             def toggle_device():
-                gui = app.config.get('GUI_INSTANCE')
+                global GUI_INSTANCE
+                gui = GUI_INSTANCE
                 if not gui:
                     return jsonify({"error": "GUI not initialized"}), 500
 

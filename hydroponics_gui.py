@@ -193,10 +193,15 @@ class HydroponicsGUI:
             import cv2
 
             def generate_video(device_path):
-                cap = cv2.VideoCapture(device_path)
-                # Set lower resolution to reduce USB bandwidth
-                cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-                cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+                import cv2
+                cap = cv2.VideoCapture(device_path, cv2.CAP_V4L2)
+
+                # Bandwidth-friendly settings
+                cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*"MJPG"))  # Use MJPEG compression
+                cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)  # Lower resolution
+                cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 360)
+                cap.set(cv2.CAP_PROP_FPS, 10)  # Lower frame rate
+
                 if not cap.isOpened():
                     raise RuntimeError(f"Could not open video device {device_path}")
                 while True:

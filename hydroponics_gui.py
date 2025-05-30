@@ -252,12 +252,12 @@ class HydroponicsGUI:
 
             @app.route("/video_feed1")
             def video_feed1():
-                return Response(generate_video("/dev/video0"),
+                return Response(generate_video("/dev/video2"),
                                 mimetype="multipart/x-mixed-replace; boundary=frame")
 
             @app.route("/video_feed2")
             def video_feed2():
-                return Response(generate_video("/dev/video2"),
+                return Response(generate_video("/dev/video0"),
                                 mimetype="multipart/x-mixed-replace; boundary=frame")
 
             app.run(host='0.0.0.0', port=5050, debug=True, use_reloader=False)

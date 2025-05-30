@@ -49,13 +49,9 @@ fi
 # Run the Python script
 if [ -f "$REPO_DIR/$SCRIPT_NAME" ]; then
     echo "Running the main script: $SCRIPT_NAME..."
-    if command -v lxterminal >/dev/null; then
-        lxterminal -e "bash -c 'python \"$REPO_DIR/$SCRIPT_NAME\"; exec bash'"
-    else
-        LOG_FILE="$LOG_DIR/gui_$(date +'%Y%m%d_%H%M%S').log"
-        echo "Logging output to $LOG_FILE"
-        nohup python "$REPO_DIR/$SCRIPT_NAME" > "$LOG_FILE" 2>&1 &
-    fi
+    LOG_FILE="$LOG_DIR/gui_$(date +'%Y%m%d_%H%M%S').log"
+    echo "Logging output to $LOG_FILE"
+    nohup python "$REPO_DIR/$SCRIPT_NAME" > "$LOG_FILE" 2>&1 &
 else
     echo "Error: $SCRIPT_NAME not found in the repository."
     exit 1

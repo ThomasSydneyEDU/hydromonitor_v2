@@ -50,9 +50,8 @@ def daily_snapshot_job():
 
 @app.route('/')
 def index():
-    date_str = datetime.now().strftime("%d%m%Y")
-    top_image = url_for('static', filename=f'snapshots/TopCamera_{date_str}.jpg')
-    bottom_image = url_for('static', filename=f'snapshots/BottomCamera_{date_str}.jpg')
+    top_image = url_for('static', filename='snapshots/TopCamera.jpg')
+    bottom_image = url_for('static', filename='snapshots/BottomCamera.jpg')
     return render_template('index.html', top_image=top_image, bottom_image=bottom_image)
 
 def start_server():

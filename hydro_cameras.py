@@ -5,12 +5,11 @@ app = Flask(__name__)
 
 @app.route('/')
 def index():
-    top_image = '/static/snapshots/TopCamera.jpg'
-    bottom_image = '/static/snapshots/BottomCamera.jpg'
-    return render_template('index.html', top_image=top_image, bottom_image=bottom_image)
+    image_path = '/static/snapshots/TopCamera.jpg'
+    return render_template('index.html', image_path=image_path)
 
 def start_server():
-    app.run(host='0.0.0.0', port=5050,debug=True)
+    app.run(host='0.0.0.0', port=5050, debug=True)
 
 if __name__ == '__main__':
     start_server()

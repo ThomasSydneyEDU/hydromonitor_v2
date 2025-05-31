@@ -1,11 +1,7 @@
-
-
 from flask import Flask, render_template, Response, url_for
 import cv2
 import os
-from datetime import datetime
-import threading
-import time
+ 
 import logging
 
 
@@ -23,7 +19,7 @@ logging.basicConfig(filename=LOG_FILE, level=logging.INFO, format='%(asctime)s %
 TOP_CAMERA_DEVICE = '/dev/video2'
 BOTTOM_CAMERA_DEVICE = '/dev/video0'
 
-def take_snapshot(camera_device, filename):
+def take_snapshot(camera_device, filename, backup_filename=None):
     cap = cv2.VideoCapture(camera_device)
     if not cap.isOpened():
         logging.error(f"Error opening camera {camera_device}")
@@ -31,33 +27,12 @@ def take_snapshot(camera_device, filename):
     ret, frame = cap.read()
     if ret:
         cv2.imwrite(filename, frame)
+        if backup_filename:
+            cv2.imwrite(backup_filename, frame)
         logging.info(f"Snapshot taken from {camera_device} and saved to {filename}")
     else:
         logging.warning(f"Failed to capture image from {camera_device}")
     cap.release()
-
-def daily_snapshot_job():
-    while True:
-        try:
-            now = datetime.now()
-            if now.hour == 13 and now.minute == 0:
-                date_str = now.strftime("%d%m%Y_%H%M%S")
-                timestamp_top_img = os.path.join(SNAPSHOT_FOLDER, f"TopCamera_{date_str}.jpg")
-                timestamp_bottom_img = os.path.join(SNAPSHOT_FOLDER, f"BottomCamera_{date_str}.jpg")
-                overwrite_top_img = os.path.join(SNAPSHOT_FOLDER, "TopCamera.jpg")
-                overwrite_bottom_img = os.path.join(SNAPSHOT_FOLDER, "BottomCamera.jpg")
-
-                take_snapshot(TOP_CAMERA_DEVICE, timestamp_top_img)
-                take_snapshot(TOP_CAMERA_DEVICE, overwrite_top_img)
-                time.sleep(1)
-                take_snapshot(BOTTOM_CAMERA_DEVICE, timestamp_bottom_img)
-                take_snapshot(BOTTOM_CAMERA_DEVICE, overwrite_bottom_img)
-
-                logging.info("Snapshots captured and saved successfully.")
-                time.sleep(60)
-            time.sleep(20)
-        except Exception as e:
-            logging.exception("Error in daily_snapshot_job loop:")
 
 @app.route('/')
 def index():
@@ -69,6 +44,4 @@ def start_server():
     app.run(host='0.0.0.0', port=5050,debug=True)
 
 if __name__ == '__main__':
-    if not app.debug or os.environ.get("WERKZEUG_RUN_MAIN") == "true":
-        threading.Thread(target=daily_snapshot_job, daemon=True).start()
     start_server()

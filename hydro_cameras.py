@@ -5,8 +5,9 @@ app = Flask(__name__)
 
 @app.route('/')
 def index():
-    image_path = '/static/snapshots/TopCamera.jpg'
-    return render_template('index.html', image_path=image_path)
+    top_image_path = '/static/snapshots/TopCamera.jpg'
+    bottom_image_path = '/static/snapshots/BottomCamera.jpg'
+    return render_template('index.html', top_image_path=top_image_path, bottom_image_path=bottom_image_path)
 
 def start_server():
     app.run(host='0.0.0.0', port=5050, debug=True)

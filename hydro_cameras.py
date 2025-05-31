@@ -1,12 +1,11 @@
-from flask import Flask, render_template
-import os
+from flask import Flask, render_template, url_for
 
 app = Flask(__name__)
 
 @app.route('/')
 def index():
-    top_image_path = '/static/snapshots/TopCamera.jpg'
-    bottom_image_path = '/static/snapshots/BottomCamera.jpg'
+    top_image_path = url_for('static', filename='snapshots/TopCamera.jpg')
+    bottom_image_path = url_for('static', filename='snapshots/BottomCamera.jpg')
     return render_template('index.html', top_image_path=top_image_path, bottom_image_path=bottom_image_path)
 
 def start_server():

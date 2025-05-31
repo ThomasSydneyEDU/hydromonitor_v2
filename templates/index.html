@@ -19,7 +19,7 @@
             <h2>Daily Snapshot</h2>
             <h3>Top Garden</h3>
             <div id="top-snapshot">
-              <img src="{{ url_for('static', filename='snapshots/TopCamera.jpg') }}" width="480" alt="Top garden snapshot" />
+              <img src="{{ top_image_path }}" width="480" alt="Top garden snapshot" />
             </div>
             <div id="top-live" style="display:none;">
               <img src="{{ url_for('video_feed_top') }}" width="480" alt="Top garden live feed" />
@@ -28,7 +28,7 @@
 
             <h3>Bottom Garden</h3>
             <div id="bottom-snapshot">
-              <img src="{{ url_for('static', filename='snapshots/BottomCamera.jpg') }}" width="480" alt="Bottom garden snapshot" />
+              <img src="{{ bottom_image_path }}" width="480" alt="Bottom garden snapshot" />
             </div>
             <div id="bottom-live" style="display:none;">
               <img src="{{ url_for('video_feed_bottom') }}" width="480" alt="Bottom garden live feed" />

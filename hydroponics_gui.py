@@ -3,7 +3,9 @@ import tkinter.ttk as ttk
 import threading
 from datetime import datetime
 import json
-from flask import Flask, jsonify, request, render_template
+import os
+import json
+import datetime
 from gui_helpers import (
     create_switch,
     create_reset_button,
@@ -11,8 +13,6 @@ from gui_helpers import (
     update_connection_status,
 )
 from arduino_helpers import connect_to_arduino, send_command_to_arduino
-
-GUI_INSTANCE = None
 
 
 class HydroponicsGUI:
@@ -185,93 +185,12 @@ class HydroponicsGUI:
 
         # self.start_flask_server()
 
-    def start_flask_server(self):
-        def run_flask():
-            import os
-            import json
-            from flask import Response
-            import cv2
-
-            def generate_video(device_path):
-                import cv2
-                cap = cv2.VideoCapture(device_path, cv2.CAP_V4L2)
-
-                # Bandwidth-friendly settings
-                cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*"MJPG"))  # Use MJPEG compression
-                cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)  # Lower resolution
-                cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 360)
-                cap.set(cv2.CAP_PROP_FPS, 10)  # Lower frame rate
-
-                if not cap.isOpened():
-                    raise RuntimeError(f"Could not open video device {device_path}")
-                while True:
-                    success, frame = cap.read()
-                    if not success:
-                        break
-                    ret, buffer = cv2.imencode('.jpg', frame)
-                    frame = buffer.tobytes()
-                    yield (b'--frame\r\n'
-                           b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
-
-            @app.route("/")
-            def index():
-                try:
-                    script_dir = os.path.dirname(os.path.abspath(__file__))
-                    status_path = os.path.join(script_dir, "hydro_dashboard", "status.json")
-                    with open(status_path, "r") as f:
-                        status = json.load(f)
-                    return render_template("index.html", status=status)
-                except Exception as e:
-                    return f"Failed to load status: {e}", 500
-
-            @app.route("/status")
-            def get_status():
-                try:
-                    script_dir = os.path.dirname(os.path.abspath(__file__))
-                    status_path = os.path.join(script_dir, "hydro_dashboard", "status.json")
-                    with open(status_path, "r") as f:
-                        status = json.load(f)
-                    return jsonify(status)
-                except Exception as e:
-                    return jsonify({"error": f"Failed to load status: {e}"}), 500
-
-            @app.route("/toggle", methods=["POST"])
-            def toggle_device():
-                global GUI_INSTANCE
-                gui = GUI_INSTANCE
-                if not gui:
-                    return jsonify({"error": "GUI not initialized"}), 500
-
-                data = request.get_json()
-                device = data.get("device")
-                if not device or device not in gui.states:
-                    return jsonify({"error": "Invalid or unknown device"}), 400
-
-                gui.toggle_switch(device)
-                return jsonify({"success": True, "new_state": gui.states[device]["state"]})
-
-            @app.route("/video_feed1")
-            def video_feed1():
-                return Response(generate_video("/dev/video2"),
-                                mimetype="multipart/x-mixed-replace; boundary=frame")
-
-            @app.route("/video_feed2")
-            def video_feed2():
-                return Response(generate_video("/dev/video0"),
-                                mimetype="multipart/x-mixed-replace; boundary=frame")
-
-            app.run(host='0.0.0.0', port=5050, debug=True, use_reloader=False)
-        threading.Thread(target=run_flask, daemon=True).start()
 
     def schedule_status_write(self):
         self.write_status_to_file()
         self.root.after(60000, self.schedule_status_write)
 
     def write_status_to_file(self):
-        import json
-        import os
-        import datetime
-
         script_dir = os.path.dirname(os.path.abspath(__file__))
         output_path = os.path.join(script_dir, "hydro_dashboard", "status.json")
 
@@ -293,9 +212,9 @@ class HydroponicsGUI:
             os.makedirs(os.path.dirname(output_path), exist_ok=True)
             with open(output_path, "w") as f:
                 json.dump(status, f)
-            print(f"✅ Status written to {output_path}")
+            print(f"[INFO] ✅ Status written to {output_path}")
         except Exception as e:
-            print(f"❌ Failed to write status: {e}")
+            print(f"[ERROR] ❌ Failed to write status: {e}")
 
     def toggle_switch(self, state_key):
         """Toggle a device state manually and send the command to the Arduino."""
@@ -456,14 +375,12 @@ class HydroponicsGUI:
 
 
 
-app = Flask(__name__, static_folder="static", template_folder="templates")
 
 
 def main():
     arduino = connect_to_arduino()
     root = tk.Tk()
     gui = HydroponicsGUI(root, arduino)
-    gui.start_flask_server()
     root.mainloop()
     if arduino:
         arduino.close()

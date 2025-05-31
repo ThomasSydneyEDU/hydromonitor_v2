@@ -56,7 +56,7 @@ def index():
     return render_template('index.html', top_image=top_image, bottom_image=bottom_image)
 
 def start_server():
-    app.run(host='0.0.0.0', port=5050)
+    app.run(host='0.0.0.0', port=5050,debug=True)
 
 if __name__ == '__main__':
     if not app.debug or os.environ.get("WERKZEUG_RUN_MAIN") == "true":

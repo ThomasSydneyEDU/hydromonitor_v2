@@ -38,15 +38,26 @@ def take_snapshot(camera_device, filename):
 
 def daily_snapshot_job():
     while True:
-        now = datetime.now()
-        if now.hour == 13 and now.minute == 0:
-            date_str = now.strftime("%d%m%Y")
-            top_img_path = os.path.join(SNAPSHOT_FOLDER, f"TopCamera_{date_str}.jpg")
-            bottom_img_path = os.path.join(SNAPSHOT_FOLDER, f"BottomCamera_{date_str}.jpg")
-            take_snapshot(TOP_CAMERA_DEVICE, top_img_path)
-            take_snapshot(BOTTOM_CAMERA_DEVICE, bottom_img_path)
-            time.sleep(60)  # prevent taking multiple photos in the same minute
-        time.sleep(20)  # check every 20 seconds
+        try:
+            now = datetime.now()
+            if now.hour == 13 and now.minute == 0:
+                date_str = now.strftime("%d%m%Y_%H%M%S")
+                timestamp_top_img = os.path.join(SNAPSHOT_FOLDER, f"TopCamera_{date_str}.jpg")
+                timestamp_bottom_img = os.path.join(SNAPSHOT_FOLDER, f"BottomCamera_{date_str}.jpg")
+                overwrite_top_img = os.path.join(SNAPSHOT_FOLDER, "TopCamera.jpg")
+                overwrite_bottom_img = os.path.join(SNAPSHOT_FOLDER, "BottomCamera.jpg")
+
+                take_snapshot(TOP_CAMERA_DEVICE, timestamp_top_img)
+                take_snapshot(TOP_CAMERA_DEVICE, overwrite_top_img)
+                time.sleep(1)
+                take_snapshot(BOTTOM_CAMERA_DEVICE, timestamp_bottom_img)
+                take_snapshot(BOTTOM_CAMERA_DEVICE, overwrite_bottom_img)
+
+                logging.info("Snapshots captured and saved successfully.")
+                time.sleep(60)
+            time.sleep(20)
+        except Exception as e:
+            logging.exception("Error in daily_snapshot_job loop:")
 
 @app.route('/')
 def index():

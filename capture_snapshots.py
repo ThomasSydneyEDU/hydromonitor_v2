@@ -4,6 +4,7 @@ from pathlib import Path
 import logging
 import time
 import cv2
+import numpy as np
 
 # Directory for snapshots
 snapshot_dir = Path(__file__).resolve().parent / 'static' / 'snapshots'
@@ -37,18 +38,26 @@ def capture_camera(device, current_filename, archive_filename, label):
         logging.error(err_msg)
 
 
-# Function to correct red tint in captured images
 def correct_red_tint(image_path):
     image = cv2.imread(str(image_path))
     if image is None:
         logging.error(f"Could not read image for correction: {image_path}")
         return
 
-    b, g, r = cv2.split(image)
-    r = cv2.multiply(r, 0.7)  # slightly reduce red
-    g = cv2.multiply(g, 1.3)  # increase green a bit more
-    b = cv2.multiply(b, 1.1)  # reduce blue enhancement
-    corrected = cv2.merge((b, g, r))
+    # Convert image to float32 for processing
+    image = image.astype('float32') / 255.0
+
+    # Correction matrix: reduce red and blue, boost green
+    correction_matrix = np.array([
+        [1.0, 0.0, 0.0],   # Blue stays similar
+        [0.0, 1.5, 0.0],   # Boost green
+        [0.0, 0.0, 0.5]    # Reduce red
+    ])
+
+    corrected = cv2.transform(image, correction_matrix)
+    corrected = np.clip(corrected, 0, 1)
+    corrected = (corrected * 255).astype('uint8')
+
     cv2.imwrite(str(image_path), corrected)
     logging.info(f"Color corrected image saved: {image_path}")
 

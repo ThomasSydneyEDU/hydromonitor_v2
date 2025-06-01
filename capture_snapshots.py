@@ -38,33 +38,40 @@ def capture_camera(device, current_filename, archive_filename, label):
         logging.error(err_msg)
 
 
-def correct_red_tint(image_path):
-    image = cv2.imread(str(image_path))
-    if image is None:
-        logging.error(f"Could not read image for correction: {image_path}")
+def apply_color_correction_from_reference(image_path, reference_path):
+    import cv2
+    import numpy as np
+
+    # Load the current (grow light) and reference (white light) images
+    img = cv2.imread(str(image_path))
+    ref = cv2.imread(str(reference_path))
+
+    if img is None or ref is None:
+        logging.error("Could not read images for correction.")
         return
 
-    # Convert image to float32 for processing
-    image = image.astype('float32') / 255.0
+    img = img.astype('float32') / 255.0
+    ref = ref.astype('float32') / 255.0
 
-    # Correction matrix: reduce red and blue, boost green
-    correction_matrix = np.array([
-        [1.0, 0.0, 0.0],   # Blue stays similar
-        [0.0, 1.5, 0.0],   # Boost green
-        [0.0, 0.0, 0.5]    # Reduce red
-    ])
+    # Crop area (tablet cover region) - manually estimated for current camera view
+    x, y, w, h = 50, 80, 500, 550
+    img_crop = img[y:y+h, x:x+w].reshape(-1, 3)
+    ref_crop = ref[y:y+h, x:x+w].reshape(-1, 3)
 
-    corrected = cv2.transform(image, correction_matrix)
+    # Solve for 3x3 color correction matrix using least squares
+    A, _, _, _ = np.linalg.lstsq(img_crop, ref_crop, rcond=None)
+
+    corrected = np.dot(img.reshape(-1, 3), A).reshape(img.shape)
     corrected = np.clip(corrected, 0, 1)
     corrected = (corrected * 255).astype('uint8')
 
     cv2.imwrite(str(image_path), corrected)
-    logging.info(f"Color corrected image saved: {image_path}")
+    logging.info(f"Color corrected (from reference) image saved: {image_path}")
 
 capture_camera('/dev/video0', top_filename, top_archive_filename, "Top Camera")
-correct_red_tint(top_filename)
+apply_color_correction_from_reference(top_filename, Path('/home/tcar5787/Documents/hydromonitor_v2/reference_white.png'))
 
 time.sleep(1)
 
 capture_camera('/dev/video2', bottom_filename, bottom_archive_filename, "Bottom Camera")
-correct_red_tint(bottom_filename)
+apply_color_correction_from_reference(bottom_filename, Path('/home/tcar5787/Documents/hydromonitor_v2/reference_white.png'))

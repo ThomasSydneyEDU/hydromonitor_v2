@@ -45,9 +45,9 @@ def correct_red_tint(image_path):
         return
 
     b, g, r = cv2.split(image)
-    r = cv2.multiply(r, 0.6)  # reduce red
-    g = cv2.multiply(g, 1.2)  # enhance green
-    b = cv2.multiply(b, 1.3)  # enhance blue
+    r = cv2.multiply(r, 0.7)  # slightly reduce red
+    g = cv2.multiply(g, 1.3)  # increase green a bit more
+    b = cv2.multiply(b, 1.1)  # reduce blue enhancement
     corrected = cv2.merge((b, g, r))
     cv2.imwrite(str(image_path), corrected)
     logging.info(f"Color corrected image saved: {image_path}")

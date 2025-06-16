@@ -8,14 +8,14 @@
 #define RELAY_PUMP_TOP 12
 #define RELAY_PUMP_BOTTOM 13
 
-#define RELAY_VENT_FAN A2
-#define RELAY_CIRCULATION_FAN A3
+#define RELAY_VENT_FAN 3
+#define RELAY_CIRCULATION_FAN 4
 
 #define FLOAT_SENSOR_TOP 5
 #define FLOAT_SENSOR_BOTTOM 6
 
-#define DHTPIN 3  // Air temp and humidity sensor
-#define ONE_WIRE_BUS 2  // Water temperature probes
+#define DHTPIN 2  // Air temp and humidity sensor
+#define ONE_WIRE_BUS A2  // Water temperature probes
 
 // Include DHT Sensor Library
 #include <Adafruit_Sensor.h>

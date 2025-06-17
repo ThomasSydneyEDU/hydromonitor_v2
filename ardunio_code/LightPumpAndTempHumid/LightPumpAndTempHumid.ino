@@ -332,11 +332,10 @@ void runSchedule() {
     digitalWrite(RELAY_LIGHTS_TOP, lightsState ? LOW : HIGH);
     digitalWrite(RELAY_LIGHTS_BOTTOM, lightsState ? LOW : HIGH);
 
-    // **Pumps Schedule (2 minutes at specific hours)**
-    bool pumpsState = (minutes < 2) && (
-        hours == 7 || hours == 9 || hours == 11 ||
-        hours == 13 || hours == 15 || hours == 17
-    );
+    // **Pumps Schedule: ON for 5 minutes every 30 minutes during daylight hours**
+    bool daylightHours = (hours >= 7 && hours < 19);
+    bool halfHourCycle = (minutes % 30 < 5);  // ON for 5 minutes every 30
+    bool pumpsState = daylightHours && halfHourCycle;
     digitalWrite(RELAY_PUMP_TOP, pumpsState ? LOW : HIGH);
     digitalWrite(RELAY_PUMP_BOTTOM, pumpsState ? LOW : HIGH);
 

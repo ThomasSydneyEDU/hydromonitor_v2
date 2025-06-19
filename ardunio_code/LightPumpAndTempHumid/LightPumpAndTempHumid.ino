@@ -8,16 +8,16 @@
 #define RELAY_PUMP_TOP 12
 #define RELAY_PUMP_BOTTOM 13
 
-#define RELAY_VENT_FAN 3
-#define RELAY_CIRCULATION_FAN 4
+#define RELAY_VENT_FAN A2
+#define RELAY_CIRCULATION_FAN A3
 
 #define FLOAT_SENSOR_TOP 5
 #define FLOAT_SENSOR_BOTTOM 6
 
 #define DHTPIN 2  // Air temp and humidity sensor
 // Separate OneWire buses for each DS18B20 sensor
-#define ONE_WIRE_BUS_1 A2
-#define ONE_WIRE_BUS_2 A3
+#define ONE_WIRE_BUS_1 2
+#define ONE_WIRE_BUS_2 3
 
 
 // Include DHT Sensor Library

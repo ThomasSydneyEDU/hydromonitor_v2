@@ -15,7 +15,10 @@
 #define FLOAT_SENSOR_BOTTOM 6
 
 #define DHTPIN 2  // Air temp and humidity sensor
-#define ONE_WIRE_BUS A2  // Water temperature probes
+// Separate OneWire buses for each DS18B20 sensor
+#define ONE_WIRE_BUS_1 A2
+#define ONE_WIRE_BUS_2 A3
+
 
 // Include DHT Sensor Library
 #include <Adafruit_Sensor.h>
@@ -24,13 +27,14 @@
 #include <OneWire.h>
 #include <DallasTemperature.h>
 
+OneWire oneWire1(ONE_WIRE_BUS_1);
+DallasTemperature sensor1(&oneWire1);
+OneWire oneWire2(ONE_WIRE_BUS_2);
+DallasTemperature sensor2(&oneWire2);
+
 // Define DHT Sensor Pin & Type
 #define DHTTYPE DHT11
 DHT dht(DHTPIN, DHTTYPE);
-
-OneWire oneWire(ONE_WIRE_BUS);
-DallasTemperature sensors(&oneWire);
-DeviceAddress sensor1, sensor2;
 
 // Time tracking variables
 int hours = 0, minutes = 0, seconds = 0;
@@ -89,12 +93,8 @@ void setup() {
     dht.begin();
 
     sensors.begin();
-    if (!sensors.getAddress(sensor1, 0)) {
-        Serial.println("Could not find sensor 0");
-    }
-    if (!sensors.getAddress(sensor2, 1)) {
-        Serial.println("Could not find sensor 1");
-    }
+    sensor1.begin();
+    sensor2.begin();
 
     Serial.println("Arduino is ready. Default time: 00:00. Running schedule.");
 }
@@ -135,9 +135,10 @@ void loop() {
 
 // Function to send relay states and sensor data to the Pi
 void sendRelayState() {
-    sensors.requestTemperatures();
-    float waterTemp1 = sensors.getTempC(sensor1);
-    float waterTemp2 = sensors.getTempC(sensor2);
+    sensor1.requestTemperatures();
+    float waterTemp1 = sensor1.getTempCByIndex(0);
+    sensor2.requestTemperatures();
+    float waterTemp2 = sensor2.getTempCByIndex(0);
 
     if (isnan(waterTemp1)) waterTemp1 = -1;
     if (isnan(waterTemp2)) waterTemp2 = -1;

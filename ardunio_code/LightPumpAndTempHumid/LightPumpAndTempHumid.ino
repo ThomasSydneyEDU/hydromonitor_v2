@@ -92,8 +92,8 @@ void setup() {
     // Initialize DHT Sensor
     dht.begin();
 
-    sensors.begin();
     sensor1.begin();
+    delay(1000);
     sensor2.begin();
 
     Serial.println("Arduino is ready. Default time: 00:00. Running schedule.");
@@ -103,8 +103,8 @@ void loop() {
     unsigned long currentMillis = millis();
 
     // Increment time every second
-    if (currentMillis - lastMillis >= 1000) {
-        lastMillis = currentMillis;
+    while (currentMillis - lastMillis >= 1000) {
+        lastMillis += 1000;
         incrementTime();
         if (!overrideActive) {
             runSchedule();
@@ -212,6 +212,7 @@ void handleCommand(String command) {
     } else if (command.startsWith("SET_TIME:")) {
         setTimeFromPi(command.substring(9));
         Serial.println("SET_TIME OK");
+        Serial.println("Received time update command: " + command);
         sendRelayState();
     } else if (command == "RESET_SCHEDULE") {  
         Serial.println("Schedule reset. Resuming automatic control.");
@@ -322,6 +323,10 @@ void incrementTime() {
             }
         }
     }
+    Serial.print("Time: ");
+    Serial.print(hours); Serial.print(":");
+    Serial.print(minutes); Serial.print(":");
+    Serial.println(seconds);
 }
 
 // Function to run the schedule

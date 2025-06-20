@@ -152,19 +152,35 @@ void loop() {
     }
 }
 
-// Function to send relay states and sensor data to the Pi
 void sendRelayState() {
+    sendRelayStatus();
+    sendSensorStatus();
+}
+
+void sendRelayStatus() {
+    Serial.print("RSTATE:");
+    Serial.print(digitalRead(RELAY_LIGHTS_TOP) == LOW ? 1 : 0); Serial.print(",");
+    Serial.print(digitalRead(RELAY_LIGHTS_BOTTOM) == LOW ? 1 : 0); Serial.print(",");
+    Serial.print(digitalRead(RELAY_PUMP_TOP) == LOW ? 1 : 0); Serial.print(",");
+    Serial.print(digitalRead(RELAY_PUMP_BOTTOM) == LOW ? 1 : 0); Serial.print(",");
+    Serial.print(digitalRead(RELAY_VENT_FAN) == LOW ? 1 : 0); Serial.print(",");
+    Serial.print(digitalRead(RELAY_CIRCULATION_FAN) == LOW ? 1 : 0); Serial.print(",");
+    Serial.print(digitalRead(RELAY_SENSOR_PUMP_TOP) == LOW ? 1 : 0); Serial.print(",");
+    Serial.print(digitalRead(RELAY_SENSOR_PUMP_BOTTOM) == LOW ? 1 : 0); Serial.print(",");
+    Serial.println(digitalRead(RELAY_DRAIN_ACTUATOR) == LOW ? 1 : 0);
+}
+
+void sendSensorStatus() {
     sensor1.requestTemperatures();
     float waterTemp1 = sensor1.getTempCByIndex(0);
-    delay(1000);
     sensor2.requestTemperatures();
     float waterTemp2 = sensor2.getTempCByIndex(0);
 
     if (isnan(waterTemp1)) waterTemp1 = -1;
     if (isnan(waterTemp2)) waterTemp2 = -1;
 
-    int temp = (int)dht.readTemperature(); // Convert float to int
-    int humid = (int)dht.readHumidity();   // Convert float to int
+    int temp = (int)dht.readTemperature();
+    int humid = (int)dht.readHumidity();
 
     if (isnan(temp) || isnan(humid)) {
         temp = -1;
@@ -175,23 +191,12 @@ void sendRelayState() {
     int floatBottom = digitalRead(FLOAT_SENSOR_BOTTOM) == LOW ? 1 : 0;
 
     Serial.print("SSTATE:");
-    Serial.print(temp);
-    Serial.print(",");
-    Serial.print(humid);
-    Serial.print(",");
-    Serial.print(waterTemp1, 1);
-    Serial.print(",");
-    Serial.print(waterTemp2, 1);
-    Serial.print(",");
-    Serial.print(floatTop);
-    Serial.print(",");
+    Serial.print(temp); Serial.print(",");
+    Serial.print(humid); Serial.print(",");
+    Serial.print(waterTemp1, 1); Serial.print(",");
+    Serial.print(waterTemp2, 1); Serial.print(",");
+    Serial.print(floatTop); Serial.print(",");
     Serial.println(floatBottom);
-}
-
-// Function to send relay states and sensor data to the Pi
-void sendRelayState() {
-    sendRelayStatus();
-    sendSensorStatus();
 }
 
 // Function to process commands from the Raspberry Pi

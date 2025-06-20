@@ -176,6 +176,8 @@ class HydroponicsGUI:
 
         # Send time to Arduino after 2 seconds
         self.root.after(2000, self.set_time_on_arduino)
+        # Schedule periodic time sync every 10 minutes
+        self.root.after(10 * 60 * 1000, self.schedule_periodic_time_sync)
 
         # Start listening for relay state updates
         self.start_relay_state_listener()
@@ -390,3 +392,8 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+    def schedule_periodic_time_sync(self):
+        """Resend current time to Arduino every 10 minutes."""
+        self.set_time_on_arduino()
+        self.root.after(10 * 60 * 1000, self.schedule_periodic_time_sync)

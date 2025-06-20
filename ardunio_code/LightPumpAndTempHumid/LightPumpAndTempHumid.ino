@@ -152,32 +152,11 @@ void loop() {
     }
 }
 
-// Function to send relay status only
-void sendRelayStatus() {
-    Serial.print("RSTATE:");
-    Serial.print(digitalRead(RELAY_LIGHTS_TOP) == LOW ? 1 : 0);
-    Serial.print(",");
-    Serial.print(digitalRead(RELAY_LIGHTS_BOTTOM) == LOW ? 1 : 0);
-    Serial.print(",");
-    Serial.print(digitalRead(RELAY_PUMP_TOP) == LOW ? 1 : 0);
-    Serial.print(",");
-    Serial.print(digitalRead(RELAY_PUMP_BOTTOM) == LOW ? 1 : 0);
-    Serial.print(",");
-    Serial.print(digitalRead(RELAY_VENT_FAN) == LOW ? 1 : 0);
-    Serial.print(",");
-    Serial.print(digitalRead(RELAY_CIRCULATION_FAN) == LOW ? 1 : 0);
-    Serial.print(",");
-    Serial.print(digitalRead(RELAY_SENSOR_PUMP_TOP) == LOW ? 1 : 0);
-    Serial.print(",");
-    Serial.print(digitalRead(RELAY_SENSOR_PUMP_BOTTOM) == LOW ? 1 : 0);
-    Serial.print(",");
-    Serial.println(digitalRead(RELAY_DRAIN_ACTUATOR) == LOW ? 1 : 0);
-}
-
-// Function to send sensor status only
-void sendSensorStatus() {
+// Function to send relay states and sensor data to the Pi
+void sendRelayState() {
     sensor1.requestTemperatures();
     float waterTemp1 = sensor1.getTempCByIndex(0);
+    delay(1000);
     sensor2.requestTemperatures();
     float waterTemp2 = sensor2.getTempCByIndex(0);
 
@@ -293,8 +272,11 @@ void overrideDevice(String command) {
     sendRelayState();
 }
 
-// Function to set time from the Raspberry Pi
 void setTimeFromPi(String timeString) {
+    timeString.trim();  // <- this removes trailing \r and spaces
+
+    Serial.println("⚠ Raw SET_TIME string: [" + timeString + "]");
+
     int firstColon = timeString.indexOf(':');
     int secondColon = timeString.lastIndexOf(':');
 
@@ -302,18 +284,17 @@ void setTimeFromPi(String timeString) {
         hours = timeString.substring(0, firstColon).toInt();
         minutes = timeString.substring(firstColon + 1, secondColon).toInt();
         seconds = timeString.substring(secondColon + 1).toInt();
-        Serial.print("Time set to: ");
-        Serial.print(hours);
-        Serial.print(":");
-        Serial.print(minutes);
-        Serial.print(":");
+
+        Serial.print("⏰ Time set to: ");
+        Serial.print(hours); Serial.print(":");
+        Serial.print(minutes); Serial.print(":");
         Serial.println(seconds);
 
         // Resume schedule after time update
         overrideActive = false;
         runSchedule();
     } else {
-        Serial.println("Invalid time format!");
+        Serial.println("❌ Invalid time format!");
     }
 }
 

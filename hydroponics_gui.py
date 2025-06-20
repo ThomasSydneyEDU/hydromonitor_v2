@@ -16,6 +16,11 @@ from arduino_helpers import connect_to_arduino, send_command_to_arduino
 
 
 class HydroponicsGUI:
+    def schedule_periodic_time_sync(self):
+        """Resend current time to Arduino every 10 minutes."""
+        self.set_time_on_arduino()
+        self.root.after(10 * 60 * 1000, self.schedule_periodic_time_sync)
+
     def __init__(self, root, arduino):
         self.root = root
         self.arduino = arduino
@@ -379,8 +384,6 @@ class HydroponicsGUI:
 
 
 
-
-
 def main():
     arduino = connect_to_arduino()
     root = tk.Tk()
@@ -392,8 +395,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-    def schedule_periodic_time_sync(self):
-        """Resend current time to Arduino every 10 minutes."""
-        self.set_time_on_arduino()
-        self.root.after(10 * 60 * 1000, self.schedule_periodic_time_sync)

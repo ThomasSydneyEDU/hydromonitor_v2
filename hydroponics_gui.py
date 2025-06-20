@@ -264,6 +264,9 @@ class HydroponicsGUI:
                         print(f"[ARDUINO] {response}")
                         if response.startswith("STATE:"):
                             self.update_relay_states(response)
+                        elif response.startswith("TIME:"):
+                            time_string = response.split(":", 1)[1]
+                            self.clock_label.config(text=time_string)
                 except Exception as e:
                     print(f"Error reading state update: {e}")
                     break

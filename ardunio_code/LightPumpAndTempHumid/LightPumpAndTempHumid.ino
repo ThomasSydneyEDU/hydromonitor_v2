@@ -135,8 +135,22 @@ void loop() {
 
 // Function to send relay states and sensor data to the Pi
 void sendRelayState() {
+
+
+    // Report current Arduino time
+    Serial.print("TIME:");
+    if (hours < 10) Serial.print("0");
+    Serial.print(hours);
+    Serial.print(":");
+    if (minutes < 10) Serial.print("0");
+    Serial.print(minutes);
+    Serial.print(":");
+    if (seconds < 10) Serial.print("0");
+    Serial.println(seconds);
+
     sensor1.requestTemperatures();
     float waterTemp1 = sensor1.getTempCByIndex(0);
+    delay(1000);
     sensor2.requestTemperatures();
     float waterTemp2 = sensor2.getTempCByIndex(0);
 

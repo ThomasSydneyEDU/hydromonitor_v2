@@ -42,16 +42,6 @@ unsigned long lastMillis = 0;
 unsigned long lastStateUpdate = 0;
 unsigned long lastSensorUpdate = 0;
 
-// Function to send the current time status
-void sendTimeStatus() {
-    Serial.print("TIME:");
-    Serial.print(hours);
-    Serial.print(":");
-    Serial.print(minutes);
-    Serial.print(":");
-    Serial.println(seconds);
-}
-
 // Manual override tracking
 bool overrideActive = false;
 unsigned long overrideEndTime = 0;  // Overrides expire after 10 minutes
@@ -129,11 +119,10 @@ void loop() {
         }
     }
 
-    // Send relay state and time status every 10 seconds
+    // Send relay state every 10 seconds
     if (currentMillis - lastStateUpdate >= 10000) {
         lastStateUpdate = currentMillis;
         sendRelayState();
-        sendTimeStatus();
     }
 
     // If override has expired, return to schedule
@@ -152,9 +141,31 @@ void loop() {
     }
 }
 
-// Function to send relay status only
-void sendRelayStatus() {
-    Serial.print("RSTATE:");
+// Function to send relay states and sensor data to the Pi
+void sendRelayState() {
+    sensor1.requestTemperatures();
+    float waterTemp1 = sensor1.getTempCByIndex(0);
+    sensor2.requestTemperatures();
+    float waterTemp2 = sensor2.getTempCByIndex(0);
+
+    if (isnan(waterTemp1)) waterTemp1 = -1;
+    if (isnan(waterTemp2)) waterTemp2 = -1;
+
+    // Read sensor values
+    int temp = (int)dht.readTemperature(); // Convert float to int
+    int humid = (int)dht.readHumidity();   // Convert float to int
+
+    // If sensor readings fail, send default values (-1)
+    if (isnan(temp) || isnan(humid)) {
+        temp = -1;
+        humid = -1;
+    }
+
+    int floatTop = digitalRead(FLOAT_SENSOR_TOP) == LOW ? 1 : 0;
+    int floatBottom = digitalRead(FLOAT_SENSOR_BOTTOM) == LOW ? 1 : 0;
+
+    // Send relay states and sensor values in a single integer-based string
+    Serial.print("STATE:");
     Serial.print(digitalRead(RELAY_LIGHTS_TOP) == LOW ? 1 : 0);
     Serial.print(",");
     Serial.print(digitalRead(RELAY_LIGHTS_BOTTOM) == LOW ? 1 : 0);
@@ -167,35 +178,6 @@ void sendRelayStatus() {
     Serial.print(",");
     Serial.print(digitalRead(RELAY_CIRCULATION_FAN) == LOW ? 1 : 0);
     Serial.print(",");
-    Serial.print(digitalRead(RELAY_SENSOR_PUMP_TOP) == LOW ? 1 : 0);
-    Serial.print(",");
-    Serial.print(digitalRead(RELAY_SENSOR_PUMP_BOTTOM) == LOW ? 1 : 0);
-    Serial.print(",");
-    Serial.println(digitalRead(RELAY_DRAIN_ACTUATOR) == LOW ? 1 : 0);
-}
-
-// Function to send sensor status only
-void sendSensorStatus() {
-    sensor1.requestTemperatures();
-    float waterTemp1 = sensor1.getTempCByIndex(0);
-    sensor2.requestTemperatures();
-    float waterTemp2 = sensor2.getTempCByIndex(0);
-
-    if (isnan(waterTemp1)) waterTemp1 = -1;
-    if (isnan(waterTemp2)) waterTemp2 = -1;
-
-    int temp = (int)dht.readTemperature(); // Convert float to int
-    int humid = (int)dht.readHumidity();   // Convert float to int
-
-    if (isnan(temp) || isnan(humid)) {
-        temp = -1;
-        humid = -1;
-    }
-
-    int floatTop = digitalRead(FLOAT_SENSOR_TOP) == LOW ? 1 : 0;
-    int floatBottom = digitalRead(FLOAT_SENSOR_BOTTOM) == LOW ? 1 : 0;
-
-    Serial.print("SSTATE:");
     Serial.print(temp);
     Serial.print(",");
     Serial.print(humid);
@@ -206,13 +188,13 @@ void sendSensorStatus() {
     Serial.print(",");
     Serial.print(floatTop);
     Serial.print(",");
-    Serial.println(floatBottom);
-}
-
-// Function to send relay states and sensor data to the Pi
-void sendRelayState() {
-    sendRelayStatus();
-    sendSensorStatus();
+    Serial.print(floatBottom);
+    Serial.print(",");
+    Serial.print(digitalRead(RELAY_SENSOR_PUMP_TOP) == LOW ? 1 : 0);
+    Serial.print(",");
+    Serial.print(digitalRead(RELAY_SENSOR_PUMP_BOTTOM) == LOW ? 1 : 0);
+    Serial.print(",");
+    Serial.println(digitalRead(RELAY_DRAIN_ACTUATOR) == LOW ? 1 : 0);
 }
 
 // Function to process commands from the Raspberry Pi
@@ -331,6 +313,10 @@ void incrementTime() {
             }
         }
     }
+    Serial.print("Time: ");
+    Serial.print(hours); Serial.print(":");
+    Serial.print(minutes); Serial.print(":");
+    Serial.println(seconds);
 }
 
 // Function to run the schedule

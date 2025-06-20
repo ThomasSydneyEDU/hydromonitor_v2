@@ -14,7 +14,7 @@
 #define FLOAT_SENSOR_TOP 5
 #define FLOAT_SENSOR_BOTTOM 6
 
-#define DHTPIN 2  // Air temp and humidity sensor
+#define DHTPIN 4  // Air temp and humidity sensor
 // Separate OneWire buses for each DS18B20 sensor
 #define ONE_WIRE_BUS_1 2
 #define ONE_WIRE_BUS_2 3

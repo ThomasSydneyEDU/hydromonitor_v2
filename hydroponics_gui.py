@@ -378,6 +378,7 @@ class HydroponicsGUI:
         try:
             print("🔄 Sending reset to schedule command to Arduino")
             send_command_to_arduino(self.arduino, "RESET_SCHEDULE\n")
+            self.set_time_on_arduino()
         except Exception as e:
             print(f"⚠ Error sending reset command: {e}")
 

@@ -16,6 +16,11 @@ from arduino_helpers import connect_to_arduino, send_command_to_arduino
 
 
 class HydroponicsGUI:
+    def schedule_periodic_time_sync(self):
+        """Resend current time to Arduino every 10 minutes."""
+        self.set_time_on_arduino()
+        self.root.after(10 * 60 * 1000, self.schedule_periodic_time_sync)
+
     def __init__(self, root, arduino):
         self.root = root
         self.arduino = arduino
@@ -174,8 +179,10 @@ class HydroponicsGUI:
         # Start clock
         update_clock(self)
 
-        # Send time to Arduino
-        self.set_time_on_arduino()
+        # Send time to Arduino after 2 seconds
+        self.root.after(2000, self.set_time_on_arduino)
+        # Schedule periodic time sync every 10 minutes
+        self.root.after(10 * 60 * 1000, self.schedule_periodic_time_sync)
 
         # Start listening for relay state updates
         self.start_relay_state_listener()
@@ -254,6 +261,7 @@ class HydroponicsGUI:
                 try:
                     if self.arduino and self.arduino.in_waiting > 0:
                         response = self.arduino.readline().decode().strip()
+                        print(f"[ARDUINO] {response}")
                         if response.startswith("STATE:"):
                             self.update_relay_states(response)
                 except Exception as e:
@@ -359,8 +367,9 @@ class HydroponicsGUI:
         if self.arduino:
             try:
                 current_time = datetime.now().strftime("%H:%M:%S")
-                print(f"Sending time to Arduino: {current_time}")
-                send_command_to_arduino(self.arduino, f"SET_TIME:{current_time}\n")
+                full_command = f"SET_TIME:{current_time}\n"
+                print(f"[DEBUG] Sending to Arduino: {repr(full_command)}")
+                send_command_to_arduino(self.arduino, full_command)
             except Exception as e:
                 print(f"Error sending time to Arduino: {e}")
 
@@ -369,10 +378,9 @@ class HydroponicsGUI:
         try:
             print("🔄 Sending reset to schedule command to Arduino")
             send_command_to_arduino(self.arduino, "RESET_SCHEDULE\n")
+            self.set_time_on_arduino()
         except Exception as e:
             print(f"⚠ Error sending reset command: {e}")
-
-
 
 
 

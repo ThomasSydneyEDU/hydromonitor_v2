@@ -45,10 +45,13 @@ unsigned long lastSensorUpdate = 0;
 // Function to send the current time status
 void sendTimeStatus() {
     Serial.print("TIME:");
+    if (hours < 10) Serial.print("0");
     Serial.print(hours);
     Serial.print(":");
+    if (minutes < 10) Serial.print("0");
     Serial.print(minutes);
     Serial.print(":");
+    if (seconds < 10) Serial.print("0");
     Serial.println(seconds);
 }
 

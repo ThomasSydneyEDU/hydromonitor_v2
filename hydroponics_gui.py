@@ -277,10 +277,10 @@ class HydroponicsGUI:
                             try:
                                 _, hour_str, minute_str, second_str = response.split(":")
                                 hours, minutes, seconds = map(int, [hour_str, minute_str, second_str])
-                                arduino_time = datetime.datetime.now().replace(hour=hours, minute=minutes, second=seconds, microsecond=0)
-                                system_time = datetime.datetime.now().replace(microsecond=0)
+                                arduino_time = datetime.now().replace(hour=hours, minute=minutes, second=seconds, microsecond=0)
+                                system_time = datetime.now().replace(microsecond=0)
                                 self.last_arduino_time = arduino_time
-                                self.last_time_received_timestamp = datetime.datetime.now()
+                                self.last_time_received_timestamp = datetime.now()
 
                                 delta = abs((system_time - arduino_time).total_seconds())
 
@@ -298,7 +298,7 @@ class HydroponicsGUI:
 
     def update_clock(self):
         """Update the GUI clock based on Arduino or fallback."""
-        now = datetime.datetime.now()
+        now = datetime.now()
         if self.last_arduino_time and self.last_time_received_timestamp:
             seconds_since_last = (now - self.last_time_received_timestamp).total_seconds()
             if seconds_since_last > 15:

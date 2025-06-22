@@ -16,8 +16,6 @@ from arduino_helpers import connect_to_arduino, send_command_to_arduino
 
 
 class HydroponicsGUI:
-    RELAY_STATE_LENGTH = 9
-    SENSOR_STATE_LENGTH = 6
     def schedule_periodic_time_sync(self):
         """Resend current time to Arduino every 10 minutes."""
         self.set_time_on_arduino()
@@ -29,10 +27,6 @@ class HydroponicsGUI:
         self.root.title("Hydroponics System Control")
         self.root.geometry("800x480")
         self.root.attributes("-fullscreen", False)
-
-        # Track Arduino time and when it was received for clock display
-        self.last_arduino_time = None
-        self.last_time_received_timestamp = None
 
         # Top frame for clock and Arduino connection indicator
         self.top_frame = tk.Frame(self.root, padx=20, pady=10)
@@ -183,7 +177,7 @@ class HydroponicsGUI:
             self.states[key]["button"] = button
 
         # Start clock
-        self.update_clock()
+        update_clock(self)
 
         # Send time to Arduino after 2 seconds
         self.root.after(2000, self.set_time_on_arduino)
@@ -267,71 +261,39 @@ class HydroponicsGUI:
                 try:
                     if self.arduino and self.arduino.in_waiting > 0:
                         response = self.arduino.readline().decode().strip()
-                        if not response:
-                            continue  # Skip empty lines
                         print(f"[ARDUINO] {response}")
-                        if response.startswith("RSTATE:"):
+                        if response.startswith("STATE:"):
                             self.update_relay_states(response)
-                        elif response.startswith("SSTATE:"):
-                            self.update_sensor_states(response)
                         elif response.startswith("TIME:"):
-                            parts = response.split(":")[1].split(":")
-                            if len(parts) == 3:
-                                try:
-                                    hours, minutes, seconds = map(int, parts)
-                                    arduino_time = datetime.datetime.now().replace(hour=hours, minute=minutes, second=seconds, microsecond=0)
-                                    system_time = datetime.datetime.now().replace(microsecond=0)
-                                    self.last_arduino_time = arduino_time
-                                    self.last_time_received_timestamp = datetime.datetime.now()
-
-                                    delta = abs((system_time - arduino_time).total_seconds())
-
-                                    if delta <= 5:
-                                        self.clock_label.config(text=arduino_time.strftime("%H:%M:%S"), fg="black")
-                                    else:
-                                        self.clock_label.config(text=arduino_time.strftime("%H:%M:%S"), fg="red")
-                                except Exception as e:
-                                    print(f"⚠ Failed to parse TIME message: {response} -> {e}")
-                            else:
-                                print(f"⚠ Malformed TIME message: {response}")
+                            time_string = response.split(":", 1)[1]
+                            self.clock_label.config(text=time_string)
                 except Exception as e:
                     print(f"Error reading state update: {e}")
                     break
 
         threading.Thread(target=listen_for_state, daemon=True).start()
 
-    def update_clock(self):
-        """Update the GUI clock based on Arduino or fallback."""
-        now = datetime.datetime.now()
-        if self.last_arduino_time and self.last_time_received_timestamp:
-            seconds_since_last = (now - self.last_time_received_timestamp).total_seconds()
-            if seconds_since_last > 15:
-                # If no recent Arduino time message, show system time in gray
-                self.clock_label.config(text=now.strftime("%H:%M:%S"), fg="gray")
-        self.root.after(1000, self.update_clock)
-
     def update_relay_states(self, response):
-        """ Parse the Arduino relay state message and update GUI relay indicators. """
+        """ Parse the Arduino state message and update GUI indicators. """
         try:
             print(f"📩 Received from Arduino: {response}")  # Debugging output
 
-            if ":" not in response:
-                print(f"⚠ Incomplete or malformed message: {response}")
-                return
-
-            if not response.startswith("RSTATE:"):
+            if not response.startswith("STATE:"):
                 print(f"⚠ Warning: Unexpected message format: {response}")
                 return
 
-            # Split and extract relay state values
+            # Split and extract values (relay states + sensor data)
             state_values = response.split(":")[1].split(",")
 
-            if len(state_values) != self.RELAY_STATE_LENGTH:
-                print(f"⚠ Warning: Unexpected number of values in relay state update: {state_values}")
+            if len(state_values) != 15:
+                print(f"⚠ Warning: Unexpected number of values in state update: {state_values}")
                 return
 
             (
                 light_top, light_bottom, pump_top, pump_bottom, fan_vent, fan_circ,
+                temperature, humidity,
+                water_temp1, water_temp2,
+                float_top, float_bottom,
                 sensor_pump_top, sensor_pump_bottom, drain_actuator
             ) = state_values
 
@@ -341,6 +303,12 @@ class HydroponicsGUI:
             pump_bottom = int(pump_bottom)
             fan_vent = int(fan_vent)
             fan_circ = int(fan_circ)
+            temperature = int(temperature)
+            humidity = int(humidity)
+            water_temp1 = float(water_temp1)
+            water_temp2 = float(water_temp2)
+            float_top = int(float_top)
+            float_bottom = int(float_bottom)
             sensor_pump_top = int(sensor_pump_top)
             sensor_pump_bottom = int(sensor_pump_bottom)
             drain_actuator = int(drain_actuator)
@@ -360,34 +328,11 @@ class HydroponicsGUI:
             self.connection_indicator.delete("all")
             self.connection_indicator.create_oval(2, 2, 18, 18, fill="green")
 
-            self.write_status_to_file()
-
-        except Exception as e:
-            print(f"⚠ Error parsing relay state: {e}")
-
-    def update_sensor_states(self, response):
-        """ Parse the Arduino sensor state message and update sensor displays. """
-        try:
-            if ":" not in response:
-                print(f"⚠ Incomplete or malformed message: {response}")
-                return
-
-            sensor_values = response.split(":")[1].split(",")
-
-            if len(sensor_values) != self.SENSOR_STATE_LENGTH:
-                print(f"⚠ Warning: Unexpected number of values in sensor update: {sensor_values}")
-                return
-
-            temperature = int(sensor_values[0])
-            humidity = int(sensor_values[1])
-            water_temp1 = float(sensor_values[2])
-            water_temp2 = float(sensor_values[3])
-            float_top = int(sensor_values[4])
-            float_bottom = int(sensor_values[5])
-
+            # ✅ Update the temperature and humidity display
             self.temperature_label.config(text=f"{temperature} °C")
             self.humidity_label.config(text=f"{humidity} %")
 
+            # Update water temperature display
             self.water_temp1_label.config(text=f"Top reservoir: {water_temp1:.1f} °C")
             self.water_temp2_label.config(text=f"Bottom reservoir: {water_temp2:.1f} °C")
 
@@ -397,7 +342,7 @@ class HydroponicsGUI:
             self.write_status_to_file()
 
         except Exception as e:
-            print(f"⚠ Error parsing sensor state: {e}")
+            print(f"⚠ Error parsing relay state: {e}")
 
     def set_gui_state(self, key, state):
         """ Update BooleanVar based on relay state. """

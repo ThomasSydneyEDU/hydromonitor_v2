@@ -331,10 +331,21 @@ void runSchedule() {
     digitalWrite(RELAY_LIGHTS_TOP, lightsState ? LOW : HIGH);
     digitalWrite(RELAY_LIGHTS_BOTTOM, lightsState ? LOW : HIGH);
 
-    // **Pumps Schedule: ON for 5 minutes every 30 minutes during daylight hours**
+    // **Pumps Schedule: ON for 5 minutes at a variable interval based on air temperature**
     bool daylightHours = (hours >= 7 && hours < 19);
-    bool halfHourCycle = (minutes % 30 < 5);  // ON for 5 minutes every 30
-    bool pumpsState = daylightHours && halfHourCycle;
+    int airTemp = dht.readTemperature();
+    int wateringInterval;
+
+    if (airTemp < 15) {
+      wateringInterval = 90; // less frequent in cold weather
+    } else if (airTemp < 25) {
+      wateringInterval = 60; // moderate interval
+    } else {
+      wateringInterval = 30; // more frequent in warm weather
+    }
+
+    bool dynamicCycle = (minutes % wateringInterval < 5);  // ON for 5 minutes
+    bool pumpsState = daylightHours && dynamicCycle;
     digitalWrite(RELAY_PUMP_TOP, pumpsState ? LOW : HIGH);
     digitalWrite(RELAY_PUMP_BOTTOM, pumpsState ? LOW : HIGH);
 

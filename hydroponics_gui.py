@@ -213,7 +213,7 @@ class HydroponicsGUI:
             "Water Temp Bottom": self.water_temp2_label.cget("text").split(":")[-1].strip().replace("°C", ""),
             "Top Float": self.float_top_label.cget("text").split(":")[-1].strip(),
             "Bottom Float": self.float_bottom_label.cget("text").split(":")[-1].strip(),
-            "timestamp": datetime.datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat()
         }
 
         # Add relay statuses

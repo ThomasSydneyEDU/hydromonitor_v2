@@ -5,7 +5,6 @@ from datetime import datetime
 import json
 import os
 import json
-import datetime
 from gui_helpers import (
     create_switch,
     create_reset_button,

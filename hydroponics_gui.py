@@ -352,6 +352,9 @@ class HydroponicsGUI:
             self.set_gui_state("sensor_pump_bottom", sensor_pump_bottom)
             self.set_gui_state("drain_actuator", drain_actuator)
 
+            # Ensure GUI updates immediately after relay state change
+            self.root.update_idletasks()
+
             # ✅ Update the connection indicator to green (since valid data was received)
             self.connection_indicator.delete("all")
             self.connection_indicator.create_oval(2, 2, 18, 18, fill="green")
@@ -389,6 +392,9 @@ class HydroponicsGUI:
 
             self.float_top_label.config(text=f"Top: {'Okay' if float_top else 'Low'}")
             self.float_bottom_label.config(text=f"Bottom: {'Okay' if float_bottom else 'Low'}")
+
+            # Ensure GUI updates immediately after sensor state change
+            self.root.update_idletasks()
 
             self.write_status_to_file()
 

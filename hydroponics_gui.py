@@ -106,7 +106,7 @@ class HydroponicsGUI:
         self.temp_frame = tk.Frame(self.right_frame)
         self.temp_frame.pack(pady=10)
 
-        self.temperature_label_title = tk.Label(self.temp_frame, text="Temperature", font=("Helvetica", 14, "bold"))
+        self.temperature_label_title = tk.Label(self.temp_frame, text="Air Temperature (Inside / Outside)", font=("Helvetica", 14, "bold"))
         self.temperature_label_title.pack()
 
         self.temperature_label = tk.Label(self.temp_frame, text="-- °C", font=("Helvetica", 14))
@@ -115,7 +115,7 @@ class HydroponicsGUI:
         self.humid_frame = tk.Frame(self.right_frame)
         self.humid_frame.pack(pady=10)
 
-        self.humidity_label_title = tk.Label(self.humid_frame, text="Humidity", font=("Helvetica", 14, "bold"))
+        self.humidity_label_title = tk.Label(self.humid_frame, text="Air Humidity (Inside / Outside)", font=("Helvetica", 14, "bold"))
         self.humidity_label_title.pack()
 
         self.humidity_label = tk.Label(self.humid_frame, text="-- %", font=("Helvetica", 14))
@@ -373,19 +373,21 @@ class HydroponicsGUI:
 
             sensor_values = response.split(":")[1].split(",")
 
-            if len(sensor_values) != self.SENSOR_STATE_LENGTH:
+            if len(sensor_values) != 8:
                 print(f"⚠ Warning: Unexpected number of values in sensor update: {sensor_values}")
                 return
 
-            temperature = int(sensor_values[0])
-            humidity = int(sensor_values[1])
+            temperature1 = int(sensor_values[0])
+            humidity1 = int(sensor_values[1])
             water_temp1 = float(sensor_values[2])
             water_temp2 = float(sensor_values[3])
             float_top = int(sensor_values[4])
             float_bottom = int(sensor_values[5])
+            temperature2 = int(sensor_values[6])
+            humidity2 = int(sensor_values[7])
 
-            self.temperature_label.config(text=f"{temperature} °C")
-            self.humidity_label.config(text=f"{humidity} %")
+            self.temperature_label.config(text=f"{temperature1} / {temperature2} °C")
+            self.humidity_label.config(text=f"{humidity1} / {humidity2} %")
 
             self.water_temp1_label.config(text=f"Top reservoir: {water_temp1:.1f} °C")
             self.water_temp2_label.config(text=f"Bottom reservoir: {water_temp2:.1f} °C")

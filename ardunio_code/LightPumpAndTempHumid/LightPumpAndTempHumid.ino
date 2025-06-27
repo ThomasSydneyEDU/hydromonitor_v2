@@ -15,6 +15,7 @@
 #define FLOAT_SENSOR_BOTTOM 6
 
 #define DHTPIN 4  // Air temp and humidity sensor
+#define DHTPIN2 A0  // Second air temp and humidity sensor
 // Separate OneWire buses for each DS18B20 sensor
 #define ONE_WIRE_BUS_1 2
 #define ONE_WIRE_BUS_2 3
@@ -35,6 +36,7 @@ DallasTemperature sensor2(&oneWire2);
 // Define DHT Sensor Pin & Type
 #define DHTTYPE DHT11
 DHT dht(DHTPIN, DHTTYPE);
+DHT dht2(DHTPIN2, DHTTYPE);
 
 // Time tracking variables
 int hours = 0, minutes = 0, seconds = 0;
@@ -112,6 +114,7 @@ void setup() {
 
     // Initialize DHT Sensor
     dht.begin();
+    dht2.begin();
 
     sensor1.begin();
     delay(1000);
@@ -182,20 +185,24 @@ void sendSensorStatus() {
     if (isnan(waterTemp1)) waterTemp1 = -1;
     if (isnan(waterTemp2)) waterTemp2 = -1;
 
-    int temp = (int)dht.readTemperature();
-    int humid = (int)dht.readHumidity();
+    int temp1 = (int)dht.readTemperature();
+    int humid1 = (int)dht.readHumidity();
+    int temp2 = (int)dht2.readTemperature();
+    int humid2 = (int)dht2.readHumidity();
 
-    if (isnan(temp) || isnan(humid)) {
-        temp = -1;
-        humid = -1;
-    }
+    if (isnan(temp1)) temp1 = -1;
+    if (isnan(humid1)) humid1 = -1;
+    if (isnan(temp2)) temp2 = -1;
+    if (isnan(humid2)) humid2 = -1;
 
     int floatTop = digitalRead(FLOAT_SENSOR_TOP) == LOW ? 1 : 0;
     int floatBottom = digitalRead(FLOAT_SENSOR_BOTTOM) == LOW ? 1 : 0;
 
     Serial.print("SSTATE:");
-    Serial.print(temp); Serial.print(",");
-    Serial.print(humid); Serial.print(",");
+    Serial.print(temp1); Serial.print(",");
+    Serial.print(humid1); Serial.print(",");
+    Serial.print(temp2); Serial.print(",");
+    Serial.print(humid2); Serial.print(",");
     Serial.print(waterTemp1, 1); Serial.print(",");
     Serial.print(waterTemp2, 1); Serial.print(",");
     Serial.print(floatTop); Serial.print(",");
@@ -333,7 +340,7 @@ void runSchedule() {
 
     // **Pumps Schedule: ON for 5 minutes at a variable interval based on air temperature**
     bool daylightHours = (hours >= 7 && hours < 19);
-    int airTemp = dht.readTemperature();
+    int airTemp = temp1;  // use last known value from dht sensor 1
     int wateringInterval;
 
     if (airTemp < 15) {

@@ -379,12 +379,12 @@ class HydroponicsGUI:
 
             temperature1 = int(sensor_values[0])
             humidity1 = int(sensor_values[1])
-            water_temp1 = float(sensor_values[2])
-            water_temp2 = float(sensor_values[3])
-            float_top = int(sensor_values[4])
-            float_bottom = int(sensor_values[5])
-            temperature2 = int(sensor_values[6])
-            humidity2 = int(sensor_values[7])
+            temperature2 = int(sensor_values[2])
+            humidity2 = int(sensor_values[3])
+            water_temp1 = float(sensor_values[4])
+            water_temp2 = float(sensor_values[5])
+            float_top = int(sensor_values[6])
+            float_bottom = int(sensor_values[7])
 
             self.temperature_label.config(text=f"{temperature1} / {temperature2} °C")
             self.humidity_label.config(text=f"{humidity1} / {humidity2} %")

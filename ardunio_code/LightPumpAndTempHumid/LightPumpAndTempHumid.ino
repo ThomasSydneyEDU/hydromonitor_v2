@@ -340,7 +340,8 @@ void runSchedule() {
 
     // **Pumps Schedule: ON for 5 minutes at a variable interval based on air temperature**
     bool daylightHours = (hours >= 7 && hours < 19);
-    int airTemp = temp1;  // use last known value from dht sensor 1
+    int airTemp = (int)dht.readTemperature();  // Read air temperature directly
+    if (isnan(airTemp)) airTemp = 20;  // fallback if invalid
     int wateringInterval;
 
     if (airTemp < 15) {

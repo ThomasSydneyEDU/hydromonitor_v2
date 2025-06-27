@@ -128,10 +128,10 @@ class HydroponicsGUI:
         self.water_temp_label_title = tk.Label(self.water_temp_frame, text="Water Temperatures", font=("Helvetica", 14, "bold"))
         self.water_temp_label_title.pack()
 
-        self.water_temp1_label = tk.Label(self.water_temp_frame, text="Sensor 1: -- °C", font=("Helvetica", 12))
+        self.water_temp1_label = tk.Label(self.water_temp_frame, text="Top reservoir: -- °C", font=("Helvetica", 12))
         self.water_temp1_label.pack()
 
-        self.water_temp2_label = tk.Label(self.water_temp_frame, text="Sensor 2: -- °C", font=("Helvetica", 12))
+        self.water_temp2_label = tk.Label(self.water_temp_frame, text="Bottom reservoir: -- °C", font=("Helvetica", 12))
         self.water_temp2_label.pack()
 
         # Float Sensor Display
@@ -392,8 +392,14 @@ class HydroponicsGUI:
             self.water_temp1_label.config(text=f"Top reservoir: {water_temp1:.1f} °C")
             self.water_temp2_label.config(text=f"Bottom reservoir: {water_temp2:.1f} °C")
 
-            self.float_top_label.config(text=f"Top: {'Okay' if float_top else 'Low'}")
-            self.float_bottom_label.config(text=f"Bottom: {'Okay' if float_bottom else 'Low'}")
+            self.float_top_label.config(
+                text=f"Top: {'Okay' if float_top else 'Low'}",
+                fg="red" if not float_top else "black"
+            )
+            self.float_bottom_label.config(
+                text=f"Bottom: {'Okay' if float_bottom else 'Low'}",
+                fg="red" if not float_bottom else "black"
+            )
 
             # Ensure GUI updates immediately after sensor state change
             self.root.update_idletasks()

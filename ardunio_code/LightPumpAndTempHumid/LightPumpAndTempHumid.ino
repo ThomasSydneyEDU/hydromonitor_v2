@@ -1,21 +1,18 @@
 // Pin Definitions
 
-#define RELAY_SENSOR_PUMP_TOP 7
-#define RELAY_SENSOR_PUMP_BOTTOM 8
-#define RELAY_DRAIN_ACTUATOR 9
-#define RELAY_LIGHTS_TOP 10
-#define RELAY_LIGHTS_BOTTOM 11
-#define RELAY_PUMP_TOP 12
-#define RELAY_PUMP_BOTTOM 13
+#define RELAY_LIGHTS_TOP 7
+#define RELAY_LIGHTS_BOTTOM 8
+#define RELAY_PUMP_TOP 9
+#define RELAY_PUMP_BOTTOM 10
+#define RELAY_VENT_FAN 11
+#define RELAY_CIRCULATION_FAN 12
+#define RELAY_HEATER 13
 
-#define RELAY_VENT_FAN A2
-#define RELAY_CIRCULATION_FAN A3
+#define FLOAT_SENSOR_TOP 4
+#define FLOAT_SENSOR_BOTTOM 5
 
-#define FLOAT_SENSOR_TOP 5
-#define FLOAT_SENSOR_BOTTOM 6
-
-#define DHTPIN 4  // Air temp and humidity sensor
-#define DHTPIN2 A0  // Second air temp and humidity sensor
+#define DHTPIN A0  // Indoor air temp and humidity sensor
+#define DHTPIN2 A1  // Outdoor air temp and humidity sensor
 // Separate OneWire buses for each DS18B20 sensor
 #define ONE_WIRE_BUS_1 2
 #define ONE_WIRE_BUS_2 3
@@ -35,8 +32,8 @@ DallasTemperature sensor2(&oneWire2);
 
 // Define DHT Sensor Pin & Type
 #define DHTTYPE DHT11
-DHT dht(DHTPIN, DHTTYPE);
-DHT dht2(DHTPIN2, DHTTYPE);
+DHT dhtIndoor(DHTPIN, DHTTYPE);
+DHT dhtOutdoor(DHTPIN2, DHTTYPE);
 
 // Time tracking variables
 int hours = 0, minutes = 0, seconds = 0;
@@ -85,25 +82,17 @@ void setup() {
     pinMode(RELAY_LIGHTS_BOTTOM, OUTPUT);
     pinMode(RELAY_PUMP_TOP, OUTPUT);
     pinMode(RELAY_PUMP_BOTTOM, OUTPUT);
+    pinMode(RELAY_VENT_FAN, OUTPUT);
+    pinMode(RELAY_CIRCULATION_FAN, OUTPUT);
+    pinMode(RELAY_HEATER, OUTPUT);
 
     digitalWrite(RELAY_LIGHTS_TOP, HIGH);
     digitalWrite(RELAY_LIGHTS_BOTTOM, HIGH);
     digitalWrite(RELAY_PUMP_TOP, HIGH);
     digitalWrite(RELAY_PUMP_BOTTOM, HIGH);
-
-    pinMode(RELAY_VENT_FAN, OUTPUT);
-    pinMode(RELAY_CIRCULATION_FAN, OUTPUT);
-
     digitalWrite(RELAY_VENT_FAN, HIGH);
     digitalWrite(RELAY_CIRCULATION_FAN, HIGH);
-
-    pinMode(RELAY_SENSOR_PUMP_TOP, OUTPUT);
-    pinMode(RELAY_SENSOR_PUMP_BOTTOM, OUTPUT);
-    pinMode(RELAY_DRAIN_ACTUATOR, OUTPUT);
-
-    digitalWrite(RELAY_SENSOR_PUMP_TOP, HIGH);
-    digitalWrite(RELAY_SENSOR_PUMP_BOTTOM, HIGH);
-    digitalWrite(RELAY_DRAIN_ACTUATOR, HIGH);
+    digitalWrite(RELAY_HEATER, HIGH);
 
     pinMode(FLOAT_SENSOR_TOP, INPUT_PULLUP);
     pinMode(FLOAT_SENSOR_BOTTOM, INPUT_PULLUP);
@@ -113,8 +102,8 @@ void setup() {
     delay(2000);  // Allow serial connection to stabilize
 
     // Initialize DHT Sensor
-    dht.begin();
-    dht2.begin();
+    dhtIndoor.begin();
+    dhtOutdoor.begin();
 
     sensor1.begin();
     delay(1000);
@@ -171,9 +160,8 @@ void sendRelayStatus() {
     Serial.print(digitalRead(RELAY_PUMP_BOTTOM) == LOW ? 1 : 0); Serial.print(",");
     Serial.print(digitalRead(RELAY_VENT_FAN) == LOW ? 1 : 0); Serial.print(",");
     Serial.print(digitalRead(RELAY_CIRCULATION_FAN) == LOW ? 1 : 0); Serial.print(",");
-    Serial.print(digitalRead(RELAY_SENSOR_PUMP_TOP) == LOW ? 1 : 0); Serial.print(",");
-    Serial.print(digitalRead(RELAY_SENSOR_PUMP_BOTTOM) == LOW ? 1 : 0); Serial.print(",");
-    Serial.println(digitalRead(RELAY_DRAIN_ACTUATOR) == LOW ? 1 : 0);
+    Serial.print(digitalRead(RELAY_HEATER) == LOW ? 1 : 0);
+    Serial.println();
 }
 
 void sendSensorStatus() {
@@ -185,10 +173,10 @@ void sendSensorStatus() {
     if (isnan(waterTemp1)) waterTemp1 = -1;
     if (isnan(waterTemp2)) waterTemp2 = -1;
 
-    int temp1 = (int)dht.readTemperature();
-    int humid1 = (int)dht.readHumidity();
-    int temp2 = (int)dht2.readTemperature();
-    int humid2 = (int)dht2.readHumidity();
+    int temp1 = (int)dhtIndoor.readTemperature();
+    int humid1 = (int)dhtIndoor.readHumidity();
+    int temp2 = (int)dhtOutdoor.readTemperature();
+    int humid2 = (int)dhtOutdoor.readHumidity();
 
     if (isnan(temp1)) temp1 = -1;
     if (isnan(humid1)) humid1 = -1;
@@ -225,9 +213,7 @@ void handleCommand(String command) {
         sendRelayState();  
     } else if (command.startsWith("LT:") || command.startsWith("LB:") || 
                command.startsWith("PT:") || command.startsWith("PB:") ||
-               command.startsWith("FV:") || command.startsWith("FC:") ||
-               command.startsWith("SPT:") || command.startsWith("SPB:") ||
-               command.startsWith("DA:")) {
+               command.startsWith("FV:") || command.startsWith("FC:")) {
         overrideDevice(command);
     } else {
         Serial.println("Unknown command: " + command);
@@ -257,15 +243,6 @@ void overrideDevice(String command) {
     } else if (command.startsWith("FC:")) {
         relayPin = RELAY_CIRCULATION_FAN;
         deviceName = "Circulation Fan";
-    } else if (command.startsWith("SPT:")) {
-        relayPin = RELAY_SENSOR_PUMP_TOP;
-        deviceName = "Sensor Pump Top";
-    } else if (command.startsWith("SPB:")) {
-        relayPin = RELAY_SENSOR_PUMP_BOTTOM;
-        deviceName = "Sensor Pump Bottom";
-    } else if (command.startsWith("DA:")) {
-        relayPin = RELAY_DRAIN_ACTUATOR;
-        deviceName = "Drain Actuator";
     } else {
         Serial.println("Unknown command: " + command);
         return;
@@ -340,7 +317,7 @@ void runSchedule() {
 
     // **Pumps Schedule: ON for 5 minutes at a variable interval based on air temperature**
     bool daylightHours = (hours >= 7 && hours < 19);
-    int airTemp = (int)dht.readTemperature();  // Read air temperature directly
+    int airTemp = (int)dhtIndoor.readTemperature();  // Read air temperature directly
     if (isnan(airTemp)) airTemp = 20;  // fallback if invalid
     int wateringInterval;
 
@@ -362,8 +339,8 @@ void runSchedule() {
     digitalWrite(RELAY_CIRCULATION_FAN, circulationFanOn ? LOW : HIGH);
 
     // Vent fan trigger with timeout and cooldown logic
-    int currentTemp = dht.readTemperature();
-    int currentHumid = dht.readHumidity();
+    int currentTemp = dhtIndoor.readTemperature();
+    int currentHumid = dhtIndoor.readHumidity();
 
     bool sensorTrigger = (currentTemp > 28 || currentHumid > 80);
 

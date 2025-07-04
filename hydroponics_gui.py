@@ -206,9 +206,14 @@ class HydroponicsGUI:
         script_dir = os.path.dirname(os.path.abspath(__file__))
         output_path = os.path.join(script_dir, "hydro_dashboard", "status.json")
 
+        # Split temperature and humidity into indoor/outdoor for dashboard
+        temp_text = self.temperature_label.cget("text")
+        humid_text = self.humidity_label.cget("text")
         status = {
-            "Air Temp": self.temperature_label.cget("text").replace("°C", "").strip(),
-            "Humidity": self.humidity_label.cget("text").replace("%", "").strip(),
+            "Air Temp (Indoor)": temp_text.split("/")[0].strip().replace("°C", ""),
+            "Air Temp (Outdoor)": temp_text.split("/")[1].strip().replace("°C", "") if "/" in temp_text else "",
+            "Humidity (Indoor)": humid_text.split("/")[0].strip().replace("%", ""),
+            "Humidity (Outdoor)": humid_text.split("/")[1].strip().replace("%", "") if "/" in humid_text else "",
             "Water Temp Top": self.water_temp1_label.cget("text").split(":")[-1].strip().replace("°C", ""),
             "Water Temp Bottom": self.water_temp2_label.cget("text").split(":")[-1].strip().replace("°C", ""),
             "Top Float": self.float_top_label.cget("text").split(":")[-1].strip(),
@@ -359,13 +364,21 @@ class HydroponicsGUI:
             self.connection_indicator.delete("all")
             self.connection_indicator.create_oval(2, 2, 18, 18, fill="green")
 
+            # Ensure all buttons reflect internal state (in case of sync issues)
+            for key, info in self.states.items():
+                self.set_gui_state(key, 1 if info["state"] else 0)
+
             self.write_status_to_file()
 
         except Exception as e:
             print(f"⚠ Error parsing relay state: {e}")
 
     def update_sensor_states(self, response):
-        """ Parse the Arduino sensor state message and update sensor displays. """
+        """
+        Parse the Arduino sensor state message and update sensor displays.
+        The first temperature/humidity pair is from the *indoor* DHT sensor,
+        the second pair is from the *outdoor* DHT sensor.
+        """
         try:
             if ":" not in response:
                 print(f"⚠ Incomplete or malformed message: {response}")
@@ -377,17 +390,19 @@ class HydroponicsGUI:
                 print(f"⚠ Warning: Unexpected number of values in sensor update: {sensor_values}")
                 return
 
-            temperature1 = int(sensor_values[0])
-            humidity1 = int(sensor_values[1])
-            temperature2 = int(sensor_values[2])
-            humidity2 = int(sensor_values[3])
+            # Indoor DHT sensor
+            temp_indoor = int(sensor_values[0])
+            humid_indoor = int(sensor_values[1])
+            # Outdoor DHT sensor
+            temp_outdoor = int(sensor_values[2])
+            humid_outdoor = int(sensor_values[3])
             water_temp1 = float(sensor_values[4])
             water_temp2 = float(sensor_values[5])
             float_top = int(sensor_values[6])
             float_bottom = int(sensor_values[7])
 
-            self.temperature_label.config(text=f"{temperature1} / {temperature2} °C")
-            self.humidity_label.config(text=f"{humidity1} / {humidity2} %")
+            self.temperature_label.config(text=f"{temp_indoor} / {temp_outdoor} °C")
+            self.humidity_label.config(text=f"{humid_indoor} / {humid_outdoor} %")
 
             self.water_temp1_label.config(text=f"Top reservoir: {water_temp1:.1f} °C")
             self.water_temp2_label.config(text=f"Bottom reservoir: {water_temp2:.1f} °C")

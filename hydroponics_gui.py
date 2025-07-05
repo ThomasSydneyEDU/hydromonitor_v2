@@ -298,39 +298,28 @@ class HydroponicsGUI:
                 print(f"⚠ Warning: Unexpected message format: {response}")
                 return
 
-            # Split and extract relay state values
-            state_values = response.split(":")[1].split(",")
+            # Split and extract relay state values as key-value pairs
+            state_values = response.split(":", 1)[1].split(",")
 
-            if len(state_values) != self.RELAY_STATE_LENGTH:
-                print(f"⚠ Warning: Unexpected number of values in relay state update: {state_values}")
-                return
+            relay_map = {
+                'LT': 'lights_top',
+                'LB': 'lights_bottom',
+                'PT': 'pump_top',
+                'PB': 'pump_bottom',
+                'FV': 'fan_vent',
+                'FC': 'fan_circ',
+                'HE': 'heater',
+            }
 
-            (
-                light_top, light_bottom, pump_top, pump_bottom, fan_vent, fan_circ,
-                heater
-            ) = state_values
+            relay_states = {}
+            for item in state_values:
+                if "=" in item:
+                    code, val = item.split("=")
+                    relay_states[code.strip()] = int(val.strip())
 
-            # Convert all to int
-            light_top = int(light_top)
-            light_bottom = int(light_bottom)
-            pump_top = int(pump_top)
-            pump_bottom = int(pump_bottom)
-            fan_vent = int(fan_vent)
-            fan_circ = int(fan_circ)
-            heater = int(heater)
-
-            # Use a list to simplify and ensure all relays are updated via set_gui_state
-            relay_keys = [
-                ("lights_top", light_top),
-                ("lights_bottom", light_bottom),
-                ("pump_top", pump_top),
-                ("pump_bottom", pump_bottom),
-                ("fan_vent", fan_vent),
-                ("fan_circ", fan_circ),
-                ("heater", heater),
-            ]
-            for key, value in relay_keys:
-                self.set_gui_state(key, int(value))
+            for code, key in relay_map.items():
+                if code in relay_states:
+                    self.set_gui_state(key, relay_states[code])
 
             # Ensure GUI updates immediately after relay state change
             self.root.update_idletasks()

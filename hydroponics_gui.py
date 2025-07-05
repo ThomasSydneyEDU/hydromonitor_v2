@@ -341,17 +341,28 @@ class HydroponicsGUI:
 
             # Update GUI switch indicators, including heater
             self.set_gui_state("lights_top", light_top)
+            self.states["lights_top"]["state"] = bool(light_top)
             self.set_gui_state("lights_bottom", light_bottom)
+            self.states["lights_bottom"]["state"] = bool(light_bottom)
             self.set_gui_state("pump_top", pump_top)
+            self.states["pump_top"]["state"] = bool(pump_top)
             self.set_gui_state("pump_bottom", pump_bottom)
+            self.states["pump_bottom"]["state"] = bool(pump_bottom)
             self.set_gui_state("fan_vent", fan_vent)
+            self.states["fan_vent"]["state"] = bool(fan_vent)
             self.set_gui_state("fan_circ", fan_circ)
+            self.states["fan_circ"]["state"] = bool(fan_circ)
             self.set_gui_state("sensor_pump_top", sensor_pump_top)
+            self.states["sensor_pump_top"]["state"] = bool(sensor_pump_top)
             self.set_gui_state("sensor_pump_bottom", sensor_pump_bottom)
+            self.states["sensor_pump_bottom"]["state"] = bool(sensor_pump_bottom)
             self.set_gui_state("drain_actuator", drain_actuator)
+            self.states["drain_actuator"]["state"] = bool(drain_actuator)
             self.set_gui_state("heater", heater)
+            self.states["heater"]["state"] = bool(heater)
             if heater == 1:
                 self.set_gui_state("fan_circ", 1)
+                self.states["fan_circ"]["state"] = True
 
             # Ensure GUI updates immediately after relay state change
             self.root.update_idletasks()
@@ -359,13 +370,6 @@ class HydroponicsGUI:
             # ✅ Update the connection indicator to green (since valid data was received)
             self.connection_indicator.delete("all")
             self.connection_indicator.create_oval(2, 2, 18, 18, fill="green")
-
-            # Ensure all buttons reflect internal state (in case of sync issues)
-            for key, info in self.states.items():
-                self.set_gui_state(key, 1 if info["state"] else 0)
-
-            # Explicitly update heater state in self.states for consistency
-            self.states["heater"]["state"] = True if heater == 1 else False
 
             self.write_status_to_file()
 

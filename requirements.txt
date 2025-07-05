@@ -2,3 +2,4 @@ pyserial
 tk
 flask
 opencv-python-headless
+ttkwidgets

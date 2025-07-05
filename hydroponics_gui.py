@@ -1,14 +1,10 @@
 import tkinter as tk
-import tkinter.ttk as ttk
 import threading
 from datetime import datetime
 import json
 import os
 import json
 from gui_helpers import (
-    create_switch,
-    create_reset_button,
-    update_clock,
     update_connection_status,
 )
 from arduino_helpers import connect_to_arduino, send_command_to_arduino
@@ -24,127 +20,124 @@ class HydroponicsGUI:
 
     def __init__(self, root, arduino):
         self.root = root
+        default_bg = "#eeeeee"
         self.arduino = arduino
         self.root.title("Hydroponics System Control")
         self.root.geometry("800x480")
         self.root.attributes("-fullscreen", False)
+        self.root.configure(bg=default_bg)
 
         # Track Arduino time and when it was received for clock display
         self.last_arduino_time = None
         self.last_time_received_timestamp = None
 
         # Top frame for clock and Arduino connection indicator
-        self.top_frame = tk.Frame(self.root, padx=20, pady=10)
+        self.top_frame = tk.Frame(self.root, padx=20, pady=10, bg=default_bg)
         self.top_frame.pack(fill=tk.X, side=tk.TOP)
 
         # Arduino connection indicator with label
-        connection_frame = tk.Frame(self.top_frame)
+        connection_frame = tk.Frame(self.top_frame, bg=default_bg)
         connection_frame.pack(side=tk.RIGHT, padx=20)
-        connection_label = tk.Label(connection_frame, text="Arduino Connected", font=("Helvetica", 12))
+        connection_label = tk.Label(connection_frame, text="Arduino Connected", font=("Helvetica", 12), bg=default_bg, fg="black")
         connection_label.grid(row=0, column=0, padx=(0, 5))
-        self.connection_indicator = tk.Canvas(connection_frame, width=20, height=20, highlightthickness=0)
+        self.connection_indicator = tk.Canvas(connection_frame, width=20, height=20, highlightthickness=0, bg=default_bg)
         self.connection_indicator.grid(row=0, column=1)
         # Clock display moved to the right side of the top frame, inside connection_frame
-        self.clock_label = tk.Label(connection_frame, text="", font=("Helvetica", 14))
+        self.clock_label = tk.Label(connection_frame, text="", font=("Helvetica", 14), bg=default_bg, fg="black")
         self.clock_label.grid(row=0, column=2, padx=(10, 0))
 
         # Initialize connection status check
         update_connection_status(self)
 
         # Main frame for manual controls and sensor data
-        self.main_frame = tk.Frame(self.root)
+        self.main_frame = tk.Frame(self.root, bg=default_bg)
         self.main_frame.pack(fill=tk.BOTH, expand=True)
 
         # Center frame for switches
-        self.center_frame = tk.Frame(self.main_frame, padx=20, pady=20)
+        self.center_frame = tk.Frame(self.main_frame, padx=20, pady=20, bg=default_bg)
         self.center_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
         # Switches frame holds both relay columns
-        self.switches_frame = tk.Frame(self.root)
+        self.switches_frame = tk.Frame(self.root, bg=default_bg)
         # Add relay columns to switches_frame
-        self.relay_column_1 = tk.Frame(self.switches_frame)
+        self.relay_column_1 = tk.Frame(self.switches_frame, bg=default_bg)
         self.relay_column_1.pack(side=tk.LEFT, expand=True, padx=10)
 
-        self.relay_column_2 = tk.Frame(self.switches_frame)
+        self.relay_column_2 = tk.Frame(self.switches_frame, bg=default_bg)
         self.relay_column_2.pack(side=tk.RIGHT, expand=True, padx=10)
 
         # --- Group buttons into labeled frames in relay columns ---
-        self.lights_frame = tk.LabelFrame(self.relay_column_1, text="Lights", font=("Helvetica", 12, "bold"))
+        self.lights_frame = tk.LabelFrame(self.relay_column_1, text="Lights", font=("Helvetica", 12, "bold"), bg=default_bg, fg="black")
         self.lights_frame.pack(fill=tk.BOTH, expand=True, pady=5)
 
-        self.pumps_frame = tk.LabelFrame(self.relay_column_1, text="Pumps", font=("Helvetica", 12, "bold"))
+        self.pumps_frame = tk.LabelFrame(self.relay_column_1, text="Pumps", font=("Helvetica", 12, "bold"), bg=default_bg, fg="black")
         self.pumps_frame.pack(fill=tk.BOTH, expand=True, pady=5)
 
 
         # Heater button (moved from misc_frame to its own frame in relay_column_1)
-        self.heater_frame = tk.LabelFrame(self.relay_column_1, text="Heater", font=("Helvetica", 12, "bold"))
+        self.heater_frame = tk.LabelFrame(self.relay_column_1, text="Heater", font=("Helvetica", 12, "bold"), bg=default_bg, fg="black")
         self.heater_frame.pack(fill=tk.BOTH, expand=True, pady=5)
 
-        self.fans_frame = tk.LabelFrame(self.relay_column_2, text="Fans", font=("Helvetica", 12, "bold"))
+        self.fans_frame = tk.LabelFrame(self.relay_column_2, text="Fans", font=("Helvetica", 12, "bold"), bg=default_bg, fg="black")
         self.fans_frame.pack(fill=tk.BOTH, expand=True, pady=5)
 
-        self.misc_frame = tk.LabelFrame(self.relay_column_2, text="EC/pH Acquisition", font=("Helvetica", 12, "bold"))
+        self.misc_frame = tk.LabelFrame(self.relay_column_2, text="EC/pH Acquisition", font=("Helvetica", 12, "bold"), bg=default_bg, fg="black")
         self.misc_frame.pack(fill=tk.BOTH, expand=True, pady=5)
 
         # Pack switches_frame inside center_frame
         self.switches_frame.pack(in_=self.center_frame, fill=tk.BOTH, expand=True)
 
         # Right frame for sensor data (leave untouched)
-        self.right_frame = tk.Frame(self.main_frame, width=400, padx=20, pady=20)
+        self.right_frame = tk.Frame(self.main_frame, width=400, padx=20, pady=20, bg=default_bg)
         self.right_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
 
         # Temperature and Humidity Display
-        self.temp_frame = tk.Frame(self.right_frame)
+        self.temp_frame = tk.Frame(self.right_frame, bg=default_bg)
         self.temp_frame.pack(pady=10)
 
-        self.temperature_label_title = tk.Label(self.temp_frame, text="Air Temperature (Inside / Outside)", font=("Helvetica", 14, "bold"))
+        self.temperature_label_title = tk.Label(self.temp_frame, text="Air Temperature (Inside / Outside)", font=("Helvetica", 14, "bold"), bg=default_bg, fg="black")
         self.temperature_label_title.pack()
 
-        self.temperature_label = tk.Label(self.temp_frame, text="-- °C", font=("Helvetica", 14))
+        self.temperature_label = tk.Label(self.temp_frame, text="-- °C", font=("Helvetica", 14), bg=default_bg, fg="black")
         self.temperature_label.pack()
 
-        self.humid_frame = tk.Frame(self.right_frame)
+        self.humid_frame = tk.Frame(self.right_frame, bg=default_bg)
         self.humid_frame.pack(pady=10)
 
-        self.humidity_label_title = tk.Label(self.humid_frame, text="Air Humidity (Inside / Outside)", font=("Helvetica", 14, "bold"))
+        self.humidity_label_title = tk.Label(self.humid_frame, text="Air Humidity (Inside / Outside)", font=("Helvetica", 14, "bold"), bg=default_bg, fg="black")
         self.humidity_label_title.pack()
 
-        self.humidity_label = tk.Label(self.humid_frame, text="-- %", font=("Helvetica", 14))
+        self.humidity_label = tk.Label(self.humid_frame, text="-- %", font=("Helvetica", 14), bg=default_bg, fg="black")
         self.humidity_label.pack()
 
         # Water Temperature Display
-        self.water_temp_frame = tk.Frame(self.right_frame)
+        self.water_temp_frame = tk.Frame(self.right_frame, bg=default_bg)
         self.water_temp_frame.pack(pady=10)
 
-        self.water_temp_label_title = tk.Label(self.water_temp_frame, text="Water Temperatures", font=("Helvetica", 14, "bold"))
+        self.water_temp_label_title = tk.Label(self.water_temp_frame, text="Water Temperatures", font=("Helvetica", 14, "bold"), bg=default_bg, fg="black")
         self.water_temp_label_title.pack()
 
-        self.water_temp1_label = tk.Label(self.water_temp_frame, text="Top reservoir: -- °C", font=("Helvetica", 12))
+        self.water_temp1_label = tk.Label(self.water_temp_frame, text="Top reservoir: -- °C", font=("Helvetica", 12), bg=default_bg, fg="black")
         self.water_temp1_label.pack()
 
-        self.water_temp2_label = tk.Label(self.water_temp_frame, text="Bottom reservoir: -- °C", font=("Helvetica", 12))
+        self.water_temp2_label = tk.Label(self.water_temp_frame, text="Bottom reservoir: -- °C", font=("Helvetica", 12), bg=default_bg, fg="black")
         self.water_temp2_label.pack()
 
         # Float Sensor Display
-        self.float_frame = tk.Frame(self.right_frame)
+        self.float_frame = tk.Frame(self.right_frame, bg=default_bg)
         self.float_frame.pack(pady=10)
 
-        self.float_label_title = tk.Label(self.float_frame, text="Float Sensors", font=("Helvetica", 14, "bold"))
+        self.float_label_title = tk.Label(self.float_frame, text="Float Sensors", font=("Helvetica", 14, "bold"), bg=default_bg, fg="black")
         self.float_label_title.pack()
 
-        self.float_top_label = tk.Label(self.float_frame, text="Top: --", font=("Helvetica", 12))
+        self.float_top_label = tk.Label(self.float_frame, text="Top: --", font=("Helvetica", 12), bg=default_bg, fg="black")
         self.float_top_label.pack()
 
-        self.float_bottom_label = tk.Label(self.float_frame, text="Bottom: --", font=("Helvetica", 12))
+        self.float_bottom_label = tk.Label(self.float_frame, text="Bottom: --", font=("Helvetica", 12), bg=default_bg, fg="black")
         self.float_bottom_label.pack()
 
         # Manual controls with custom style for switches
-        style = ttk.Style(self.root)
-        style.configure("Switch.TCheckbutton",
-                        font=("Helvetica", 12),
-                        padding=6,
-                        foreground="#333",
-                        background="#eee")
+        # Remove Switch.TCheckbutton style (unused with ToggleSwitch)
 
         relay_definitions = [
             ("Lights (Top)", "lights_top", "LT", self.lights_frame),
@@ -161,16 +154,20 @@ class HydroponicsGUI:
         self.states = {}
         for label, key, code, parent in relay_definitions:
             self.states[key] = {"state": False, "device_code": code}
-            button = tk.Button(parent,
-                               text=f"{label}\nTurn ON",
-                               font=("Helvetica", 11),
-                               width=16,
-                               height=2,
-                               bg="red",
-                               activebackground="darkred",
-                               fg="white",
-                               command=lambda k=key: self.toggle_switch(k))
-            button.pack(pady=4)
+            container = tk.Frame(parent, bg=default_bg)
+            container.pack(pady=4)
+
+            button = tk.Button(
+                container,
+                text=label,
+                width=18,
+                height=2,
+                relief="raised",
+                bg="gray",
+                fg="black",
+                command=lambda k=key: self.toggle_switch(k)
+            )
+            button.pack(side=tk.LEFT, padx=4, pady=2)
             self.states[key]["button"] = button
 
         # Start clock
@@ -233,24 +230,11 @@ class HydroponicsGUI:
 
         new_state = not self.states[state_key]["state"]
         self.states[state_key]["state"] = new_state
-
-        button = self.states[state_key]["button"]
-        label = button.cget('text').splitlines()[0]
+        new_color = "green" if new_state else "red"
+        self.states[state_key]["button"].config(bg=new_color)
         if new_state:
-            button.config(
-                text=f"{label}\nTurn OFF",
-                bg="green",
-                activebackground="darkgreen",
-                fg="white"
-            )
             send_command_to_arduino(self.arduino, f"{self.states[state_key]['device_code']}:ON\n")
         else:
-            button.config(
-                text=f"{label}\nTurn ON",
-                bg="red",
-                activebackground="darkred",
-                fg="white"
-            )
             send_command_to_arduino(self.arduino, f"{self.states[state_key]['device_code']}:OFF\n")
 
         print(f"🔄 Toggled {state_key} to {'ON' if new_state else 'OFF'}")
@@ -328,6 +312,7 @@ class HydroponicsGUI:
                 sensor_pump_top, sensor_pump_bottom, drain_actuator, heater
             ) = state_values
 
+            # Convert all to int
             light_top = int(light_top)
             light_bottom = int(light_bottom)
             pump_top = int(pump_top)
@@ -339,30 +324,21 @@ class HydroponicsGUI:
             drain_actuator = int(drain_actuator)
             heater = int(heater)
 
-            # Update GUI switch indicators, including heater
-            self.set_gui_state("lights_top", light_top)
-            self.states["lights_top"]["state"] = bool(light_top)
-            self.set_gui_state("lights_bottom", light_bottom)
-            self.states["lights_bottom"]["state"] = bool(light_bottom)
-            self.set_gui_state("pump_top", pump_top)
-            self.states["pump_top"]["state"] = bool(pump_top)
-            self.set_gui_state("pump_bottom", pump_bottom)
-            self.states["pump_bottom"]["state"] = bool(pump_bottom)
-            self.set_gui_state("fan_vent", fan_vent)
-            self.states["fan_vent"]["state"] = bool(fan_vent)
-            self.set_gui_state("fan_circ", fan_circ)
-            self.states["fan_circ"]["state"] = bool(fan_circ)
-            self.set_gui_state("sensor_pump_top", sensor_pump_top)
-            self.states["sensor_pump_top"]["state"] = bool(sensor_pump_top)
-            self.set_gui_state("sensor_pump_bottom", sensor_pump_bottom)
-            self.states["sensor_pump_bottom"]["state"] = bool(sensor_pump_bottom)
-            self.set_gui_state("drain_actuator", drain_actuator)
-            self.states["drain_actuator"]["state"] = bool(drain_actuator)
-            self.set_gui_state("heater", heater)
-            self.states["heater"]["state"] = bool(heater)
-            if heater == 1:
-                self.set_gui_state("fan_circ", 1)
-                self.states["fan_circ"]["state"] = True
+            # Use a list to simplify and ensure all relays are updated via set_gui_state
+            relay_keys = [
+                ("lights_top", light_top),
+                ("lights_bottom", light_bottom),
+                ("pump_top", pump_top),
+                ("pump_bottom", pump_bottom),
+                ("fan_vent", fan_vent),
+                ("fan_circ", fan_circ),
+                ("sensor_pump_top", sensor_pump_top),
+                ("sensor_pump_bottom", sensor_pump_bottom),
+                ("drain_actuator", drain_actuator),
+                ("heater", heater),
+            ]
+            for key, value in relay_keys:
+                self.set_gui_state(key, int(value))
 
             # Ensure GUI updates immediately after relay state change
             self.root.update_idletasks()
@@ -404,11 +380,11 @@ class HydroponicsGUI:
             float_top = int(sensor_values[6])
             float_bottom = int(sensor_values[7])
 
-            self.temperature_label.config(text=f"{temp_indoor} / {temp_outdoor} °C")
-            self.humidity_label.config(text=f"{humid_indoor} / {humid_outdoor} %")
+            self.temperature_label.config(text=f"{temp_indoor} / {temp_outdoor} °C", fg="black")
+            self.humidity_label.config(text=f"{humid_indoor} / {humid_outdoor} %", fg="black")
 
-            self.water_temp1_label.config(text=f"Top reservoir: {water_temp1:.1f} °C")
-            self.water_temp2_label.config(text=f"Bottom reservoir: {water_temp2:.1f} °C")
+            self.water_temp1_label.config(text=f"Top reservoir: {water_temp1:.1f} °C", fg="black")
+            self.water_temp2_label.config(text=f"Bottom reservoir: {water_temp2:.1f} °C", fg="black")
 
             self.float_top_label.config(
                 text=f"Top: {'Okay' if float_top else 'Low'}",
@@ -428,24 +404,10 @@ class HydroponicsGUI:
             print(f"⚠ Error parsing sensor state: {e}")
 
     def set_gui_state(self, key, state):
-        """ Update BooleanVar based on relay state. """
-        self.states[key]["state"] = True if state == 1 else False
-        btn = self.states[key]["button"]
-        label = btn.cget("text").splitlines()[0]
-        if state == 1:
-            btn.config(
-                text=f"{label}\nTurn OFF",
-                bg="green",
-                activebackground="darkgreen",
-                fg="white"
-            )
-        else:
-            btn.config(
-                text=f"{label}\nTurn ON",
-                bg="red",
-                activebackground="darkred",
-                fg="white"
-            )
+        """Update button color and state based on relay state."""
+        self.states[key]["state"] = bool(state)
+        new_color = "green" if state else "red"
+        self.states[key]["button"].config(bg=new_color)
 
 
     def set_heater_state(self, on):
@@ -456,28 +418,12 @@ class HydroponicsGUI:
             return
 
         self.states[key]["state"] = on
-        button = self.states[key]["button"]
-        label = button.cget("text").splitlines()[0]
+        new_color = "green" if on else "red"
+        self.states[key]["button"].config(bg=new_color)
         if on:
-            button.config(
-                text=f"{label}\nTurn OFF",
-                bg="green",
-                activebackground="darkgreen",
-                fg="white"
-            )
             send_command_to_arduino(self.arduino, f"{self.states[key]['device_code']}:ON\n")
-            self.set_gui_state("fan_circ", 1)
-            send_command_to_arduino(self.arduino, f"{self.states['fan_circ']['device_code']}:ON\n")
         else:
-            button.config(
-                text=f"{label}\nTurn ON",
-                bg="red",
-                activebackground="darkred",
-                fg="white"
-            )
             send_command_to_arduino(self.arduino, f"{self.states[key]['device_code']}:OFF\n")
-            self.set_gui_state("fan_circ", 0)
-            send_command_to_arduino(self.arduino, f"{self.states['fan_circ']['device_code']}:OFF\n")
         print(f"🔧 Heater override: {'ON' if on else 'OFF'}")
         self.write_status_to_file()
 

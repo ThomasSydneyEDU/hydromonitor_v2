@@ -253,6 +253,18 @@ void overrideDevice(String command) {
     }
 
     String state = command.substring(command.indexOf(':') + 1);
+
+    // Heater override temperature check
+    float indoorTemp = dhtIndoor.readTemperature();
+    if (command.startsWith("HE:") && state == "ON") {
+        bool isDaytime = (hours >= 7 && hours < 19);
+        float offThreshold = isDaytime ? 22.0 : 18.0;
+        if (!isnan(indoorTemp) && indoorTemp >= offThreshold) {
+            Serial.println("Heater override denied: temperature already above threshold.");
+            return;
+        }
+    }
+
     if (state == "ON") {
         digitalWrite(relayPin, LOW);
         activateOverride();

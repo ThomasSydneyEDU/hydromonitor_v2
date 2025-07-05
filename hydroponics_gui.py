@@ -137,7 +137,6 @@ class HydroponicsGUI:
         self.float_bottom_label.pack()
 
         # Manual controls with custom style for switches
-        # Remove Switch.TCheckbutton style (unused with ToggleSwitch)
 
         relay_definitions = [
             ("Lights (Top)", "lights_top", "LT", self.lights_frame),
@@ -178,13 +177,15 @@ class HydroponicsGUI:
         # Schedule periodic time sync every 10 minutes
         self.root.after(10 * 60 * 1000, self.schedule_periodic_time_sync)
 
+        # Request relay state from Arduino
+        send_command_to_arduino(self.arduino, "GET_STATE\n")
+
         # Start listening for relay state updates
         self.start_relay_state_listener()
 
         # Schedule periodic status write
         self.schedule_status_write()
 
-        # self.start_flask_server()
 
 
     def schedule_status_write(self):

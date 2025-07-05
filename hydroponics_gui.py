@@ -11,7 +11,7 @@ from arduino_helpers import connect_to_arduino, send_command_to_arduino
 
 
 class HydroponicsGUI:
-    RELAY_STATE_LENGTH = 10
+    RELAY_STATE_LENGTH = 7
     SENSOR_STATE_LENGTH = 6
     def schedule_periodic_time_sync(self):
         """Resend current time to Arduino every 10 minutes."""
@@ -145,9 +145,6 @@ class HydroponicsGUI:
             ("Pump (Bottom)", "pump_bottom", "PB", self.pumps_frame),
             ("Fan (Vent)", "fan_vent", "FV", self.fans_frame),
             ("Fan (Circ)", "fan_circ", "FC", self.fans_frame),
-            ("Sensor Pump (Top)", "sensor_pump_top", "SPT", self.misc_frame),
-            ("Sensor Pump (Bottom)", "sensor_pump_bottom", "SPB", self.misc_frame),
-            ("Drain Actuator", "drain_actuator", "DA", self.misc_frame),
             ("Heater", "heater", "HE", self.heater_frame),
         ]
         self.states = {}
@@ -310,7 +307,7 @@ class HydroponicsGUI:
 
             (
                 light_top, light_bottom, pump_top, pump_bottom, fan_vent, fan_circ,
-                sensor_pump_top, sensor_pump_bottom, drain_actuator, heater
+                heater
             ) = state_values
 
             # Convert all to int
@@ -320,9 +317,6 @@ class HydroponicsGUI:
             pump_bottom = int(pump_bottom)
             fan_vent = int(fan_vent)
             fan_circ = int(fan_circ)
-            sensor_pump_top = int(sensor_pump_top)
-            sensor_pump_bottom = int(sensor_pump_bottom)
-            drain_actuator = int(drain_actuator)
             heater = int(heater)
 
             # Use a list to simplify and ensure all relays are updated via set_gui_state
@@ -333,9 +327,6 @@ class HydroponicsGUI:
                 ("pump_bottom", pump_bottom),
                 ("fan_vent", fan_vent),
                 ("fan_circ", fan_circ),
-                ("sensor_pump_top", sensor_pump_top),
-                ("sensor_pump_bottom", sensor_pump_bottom),
-                ("drain_actuator", drain_actuator),
                 ("heater", heater),
             ]
             for key, value in relay_keys:

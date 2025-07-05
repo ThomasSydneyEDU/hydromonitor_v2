@@ -154,13 +154,13 @@ void sendRelayState() {
 
 void sendRelayStatus() {
     Serial.print("RSTATE:");
-    Serial.print(digitalRead(RELAY_LIGHTS_TOP) == LOW ? 1 : 0); Serial.print(",");
-    Serial.print(digitalRead(RELAY_LIGHTS_BOTTOM) == LOW ? 1 : 0); Serial.print(",");
-    Serial.print(digitalRead(RELAY_PUMP_TOP) == LOW ? 1 : 0); Serial.print(",");
-    Serial.print(digitalRead(RELAY_PUMP_BOTTOM) == LOW ? 1 : 0); Serial.print(",");
-    Serial.print(digitalRead(RELAY_VENT_FAN) == LOW ? 1 : 0); Serial.print(",");
-    Serial.print(digitalRead(RELAY_CIRCULATION_FAN) == LOW ? 1 : 0); Serial.print(",");
-    Serial.print(digitalRead(RELAY_HEATER) == LOW ? 1 : 0);
+    Serial.print("LT="); Serial.print(digitalRead(RELAY_LIGHTS_TOP) == LOW ? 1 : 0); Serial.print(",");
+    Serial.print("LB="); Serial.print(digitalRead(RELAY_LIGHTS_BOTTOM) == LOW ? 1 : 0); Serial.print(",");
+    Serial.print("PT="); Serial.print(digitalRead(RELAY_PUMP_TOP) == LOW ? 1 : 0); Serial.print(",");
+    Serial.print("PB="); Serial.print(digitalRead(RELAY_PUMP_BOTTOM) == LOW ? 1 : 0); Serial.print(",");
+    Serial.print("FV="); Serial.print(digitalRead(RELAY_VENT_FAN) == LOW ? 1 : 0); Serial.print(",");
+    Serial.print("FC="); Serial.print(digitalRead(RELAY_CIRCULATION_FAN) == LOW ? 1 : 0); Serial.print(",");
+    Serial.print("HE="); Serial.print(digitalRead(RELAY_HEATER) == LOW ? 1 : 0);
     Serial.println();
 }
 
@@ -213,7 +213,8 @@ void handleCommand(String command) {
         sendRelayState();  
     } else if (command.startsWith("LT:") || command.startsWith("LB:") || 
                command.startsWith("PT:") || command.startsWith("PB:") ||
-               command.startsWith("FV:") || command.startsWith("FC:")) {
+               command.startsWith("FV:") || command.startsWith("FC:") ||
+               command.startsWith("HE:")) {
         overrideDevice(command);
     } else {
         Serial.println("Unknown command: " + command);
@@ -243,6 +244,9 @@ void overrideDevice(String command) {
     } else if (command.startsWith("FC:")) {
         relayPin = RELAY_CIRCULATION_FAN;
         deviceName = "Circulation Fan";
+    } else if (command.startsWith("HE:")) {
+        relayPin = RELAY_HEATER;
+        deviceName = "Heater";
     } else {
         Serial.println("Unknown command: " + command);
         return;
@@ -364,5 +368,30 @@ void runSchedule() {
         digitalWrite(RELAY_VENT_FAN, HIGH);
     } else {
         digitalWrite(RELAY_VENT_FAN, HIGH);
+    }
+
+    // Heater control logic with day-night temperature simulation
+    int indoorTemp = dhtIndoor.readTemperature();
+    if (!isnan(indoorTemp)) {
+        bool isDaytime = (hours >= 7 && hours < 19);
+        int onThreshold = isDaytime ? 20 : 16;
+        int offThreshold = isDaytime ? 22 : 18;
+
+        static bool lastHeaterState = HIGH;
+        int newHeaterState = digitalRead(RELAY_HEATER);
+
+        if (indoorTemp < onThreshold) {
+            digitalWrite(RELAY_HEATER, LOW); // ON
+            digitalWrite(RELAY_CIRCULATION_FAN, LOW); // Also turn on fan
+        } else if (indoorTemp >= offThreshold) {
+            digitalWrite(RELAY_HEATER, HIGH); // OFF
+            digitalWrite(RELAY_CIRCULATION_FAN, HIGH); // Also turn off fan
+        }
+
+        newHeaterState = digitalRead(RELAY_HEATER);
+        if (newHeaterState != lastHeaterState) {
+            sendRelayState();
+            lastHeaterState = newHeaterState;
+        }
     }
 }

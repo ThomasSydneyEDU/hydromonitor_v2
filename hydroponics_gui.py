@@ -15,7 +15,7 @@ from arduino_helpers import connect_to_arduino, send_command_to_arduino
 
 
 class HydroponicsGUI:
-    RELAY_STATE_LENGTH = 9
+    RELAY_STATE_LENGTH = 10
     SENSOR_STATE_LENGTH = 6
     def schedule_periodic_time_sync(self):
         """Resend current time to Arduino every 10 minutes."""
@@ -75,19 +75,10 @@ class HydroponicsGUI:
         self.pumps_frame = tk.LabelFrame(self.relay_column_1, text="Pumps", font=("Helvetica", 12, "bold"))
         self.pumps_frame.pack(fill=tk.BOTH, expand=True, pady=5)
 
-        # Reset to Schedule button
-        self.reset_frame = tk.Frame(self.relay_column_1)
-        self.reset_frame.pack(fill=tk.BOTH, expand=True, pady=5)
 
-        self.reset_button = tk.Button(self.reset_frame,
-                                      text="Reset to Schedule",
-                                      font=("Helvetica", 12, "bold"),
-                                      width=18,
-                                      height=2,
-                                      bg="blue",
-                                      fg="white",
-                                      command=self.reset_to_arduino_schedule)
-        self.reset_button.pack(pady=4)
+        # Heater button (moved from misc_frame to its own frame in relay_column_1)
+        self.heater_frame = tk.LabelFrame(self.relay_column_1, text="Heater", font=("Helvetica", 12, "bold"))
+        self.heater_frame.pack(fill=tk.BOTH, expand=True, pady=5)
 
         self.fans_frame = tk.LabelFrame(self.relay_column_2, text="Fans", font=("Helvetica", 12, "bold"))
         self.fans_frame.pack(fill=tk.BOTH, expand=True, pady=5)
@@ -165,6 +156,7 @@ class HydroponicsGUI:
             ("Sensor Pump (Top)", "sensor_pump_top", "SPT", self.misc_frame),
             ("Sensor Pump (Bottom)", "sensor_pump_bottom", "SPB", self.misc_frame),
             ("Drain Actuator", "drain_actuator", "DA", self.misc_frame),
+            ("Heater", "heater", "HE", self.heater_frame),
         ]
         self.states = {}
         for label, key, code, parent in relay_definitions:
@@ -333,7 +325,7 @@ class HydroponicsGUI:
 
             (
                 light_top, light_bottom, pump_top, pump_bottom, fan_vent, fan_circ,
-                sensor_pump_top, sensor_pump_bottom, drain_actuator
+                sensor_pump_top, sensor_pump_bottom, drain_actuator, heater
             ) = state_values
 
             light_top = int(light_top)
@@ -345,8 +337,9 @@ class HydroponicsGUI:
             sensor_pump_top = int(sensor_pump_top)
             sensor_pump_bottom = int(sensor_pump_bottom)
             drain_actuator = int(drain_actuator)
+            heater = int(heater)
 
-            # Update GUI switch indicators
+            # Update GUI switch indicators, including heater
             self.set_gui_state("lights_top", light_top)
             self.set_gui_state("lights_bottom", light_bottom)
             self.set_gui_state("pump_top", pump_top)
@@ -356,6 +349,9 @@ class HydroponicsGUI:
             self.set_gui_state("sensor_pump_top", sensor_pump_top)
             self.set_gui_state("sensor_pump_bottom", sensor_pump_bottom)
             self.set_gui_state("drain_actuator", drain_actuator)
+            self.set_gui_state("heater", heater)
+            if heater == 1:
+                self.set_gui_state("fan_circ", 1)
 
             # Ensure GUI updates immediately after relay state change
             self.root.update_idletasks()
@@ -367,6 +363,9 @@ class HydroponicsGUI:
             # Ensure all buttons reflect internal state (in case of sync issues)
             for key, info in self.states.items():
                 self.set_gui_state(key, 1 if info["state"] else 0)
+
+            # Explicitly update heater state in self.states for consistency
+            self.states["heater"]["state"] = True if heater == 1 else False
 
             self.write_status_to_file()
 
@@ -445,6 +444,40 @@ class HydroponicsGUI:
             )
 
 
+    def set_heater_state(self, on):
+        """Override heater relay from Pi logic."""
+        key = "heater"
+        if key not in self.states:
+            print("⚠ Heater key not found in relay states.")
+            return
+
+        self.states[key]["state"] = on
+        button = self.states[key]["button"]
+        label = button.cget("text").splitlines()[0]
+        if on:
+            button.config(
+                text=f"{label}\nTurn OFF",
+                bg="green",
+                activebackground="darkgreen",
+                fg="white"
+            )
+            send_command_to_arduino(self.arduino, f"{self.states[key]['device_code']}:ON\n")
+            self.set_gui_state("fan_circ", 1)
+            send_command_to_arduino(self.arduino, f"{self.states['fan_circ']['device_code']}:ON\n")
+        else:
+            button.config(
+                text=f"{label}\nTurn ON",
+                bg="red",
+                activebackground="darkred",
+                fg="white"
+            )
+            send_command_to_arduino(self.arduino, f"{self.states[key]['device_code']}:OFF\n")
+            self.set_gui_state("fan_circ", 0)
+            send_command_to_arduino(self.arduino, f"{self.states['fan_circ']['device_code']}:OFF\n")
+        print(f"🔧 Heater override: {'ON' if on else 'OFF'}")
+        self.write_status_to_file()
+
+
     def set_time_on_arduino(self):
         """Send the current system time to the Arduino."""
         if self.arduino:
@@ -456,14 +489,6 @@ class HydroponicsGUI:
             except Exception as e:
                 print(f"Error sending time to Arduino: {e}")
 
-    def reset_to_arduino_schedule(self):
-        """Send a reset command to the Arduino to resume scheduled operation."""
-        try:
-            print("🔄 Sending reset to schedule command to Arduino")
-            send_command_to_arduino(self.arduino, "RESET_SCHEDULE\n")
-            self.set_time_on_arduino()
-        except Exception as e:
-            print(f"⚠ Error sending reset command: {e}")
 
 
 

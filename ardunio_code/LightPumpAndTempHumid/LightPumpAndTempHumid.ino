@@ -371,11 +371,11 @@ void runSchedule() {
     }
 
     // Heater control logic with day-night temperature simulation
-    int indoorTemp = dhtIndoor.readTemperature();
+    float indoorTemp = dhtIndoor.readTemperature();
     if (!isnan(indoorTemp)) {
         bool isDaytime = (hours >= 7 && hours < 19);
-        int onThreshold = isDaytime ? 20 : 16;
-        int offThreshold = isDaytime ? 22 : 18;
+        float onThreshold = isDaytime ? 20.0 : 16.0;
+        float offThreshold = isDaytime ? 22.0 : 18.0;
 
         static bool lastHeaterState = HIGH;
         int newHeaterState = digitalRead(RELAY_HEATER);

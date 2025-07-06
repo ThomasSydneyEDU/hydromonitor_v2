@@ -242,6 +242,10 @@ class HydroponicsGUI:
         """ Continuously listen for state updates from the Arduino. """
         def listen_for_state():
             while True:
+                # Check for serial disconnection
+                if not self.arduino:
+                    print("⚠ Arduino not connected.")
+                    break
                 try:
                     if self.arduino and self.arduino.in_waiting > 0:
                         response = self.arduino.readline().decode().strip()
@@ -257,7 +261,11 @@ class HydroponicsGUI:
                             self.update_sensor_states(response)
                         elif response.startswith("TIME:"):
                             try:
-                                _, hour_str, minute_str, second_str = response.split(":")
+                                time_parts = response.split(":")
+                                if len(time_parts) != 4:
+                                    print(f"⚠ Malformed TIME message: {response}")
+                                    continue
+                                _, hour_str, minute_str, second_str = time_parts
                                 hours, minutes, seconds = map(int, [hour_str, minute_str, second_str])
                                 arduino_time = datetime.now().replace(hour=hours, minute=minutes, second=seconds, microsecond=0)
                                 system_time = datetime.now().replace(microsecond=0)
@@ -322,14 +330,23 @@ class HydroponicsGUI:
 
             for code, key in relay_map.items():
                 if code in relay_states:
-                    self.set_gui_state(key, relay_states[code])
+                    try:
+                        self.set_gui_state(key, relay_states[code])
+                    except Exception as e:
+                        print(f"⚠ GUI update error: {e}")
 
             # Ensure GUI updates immediately after relay state change
-            self.root.update_idletasks()
+            try:
+                self.root.update_idletasks()
+            except Exception as e:
+                print(f"⚠ GUI update error: {e}")
 
             # ✅ Update the connection indicator to green (since valid data was received)
-            self.connection_indicator.delete("all")
-            self.connection_indicator.create_oval(2, 2, 18, 18, fill="green")
+            try:
+                self.connection_indicator.delete("all")
+                self.connection_indicator.create_oval(2, 2, 18, 18, fill="green")
+            except Exception as e:
+                print(f"⚠ GUI update error: {e}")
 
             self.write_status_to_file()
             # Log relay state update to arduino_log.txt
@@ -352,7 +369,7 @@ class HydroponicsGUI:
             os.makedirs(os.path.dirname(relay_log_path), exist_ok=True)
             with open(relay_log_path, "a", newline="") as f:
                 writer = csv.writer(f)
-                if not file_exists:
+                if not file_exists or os.path.getsize(relay_log_path) == 0:
                     writer.writerow(relay_headers)
                 writer.writerow(relay_row)
 
@@ -387,23 +404,42 @@ class HydroponicsGUI:
             float_top = int(sensor_values[6])
             float_bottom = int(sensor_values[7])
 
-            self.temperature_label.config(text=f"{temp_indoor} / {temp_outdoor} °C", fg="black")
-            self.humidity_label.config(text=f"{humid_indoor} / {humid_outdoor} %", fg="black")
-
-            self.water_temp1_label.config(text=f"Top reservoir: {water_temp1:.1f} °C", fg="black")
-            self.water_temp2_label.config(text=f"Bottom reservoir: {water_temp2:.1f} °C", fg="black")
-
-            self.float_top_label.config(
-                text=f"Top: {'Okay' if float_top else 'Low'}",
-                fg="red" if not float_top else "black"
-            )
-            self.float_bottom_label.config(
-                text=f"Bottom: {'Okay' if float_bottom else 'Low'}",
-                fg="red" if not float_bottom else "black"
-            )
+            try:
+                self.temperature_label.config(text=f"{temp_indoor} / {temp_outdoor} °C", fg="black")
+            except Exception as e:
+                print(f"⚠ GUI update error: {e}")
+            try:
+                self.humidity_label.config(text=f"{humid_indoor} / {humid_outdoor} %", fg="black")
+            except Exception as e:
+                print(f"⚠ GUI update error: {e}")
+            try:
+                self.water_temp1_label.config(text=f"Top reservoir: {water_temp1:.1f} °C", fg="black")
+            except Exception as e:
+                print(f"⚠ GUI update error: {e}")
+            try:
+                self.water_temp2_label.config(text=f"Bottom reservoir: {water_temp2:.1f} °C", fg="black")
+            except Exception as e:
+                print(f"⚠ GUI update error: {e}")
+            try:
+                self.float_top_label.config(
+                    text=f"Top: {'Okay' if float_top else 'Low'}",
+                    fg="red" if not float_top else "black"
+                )
+            except Exception as e:
+                print(f"⚠ GUI update error: {e}")
+            try:
+                self.float_bottom_label.config(
+                    text=f"Bottom: {'Okay' if float_bottom else 'Low'}",
+                    fg="red" if not float_bottom else "black"
+                )
+            except Exception as e:
+                print(f"⚠ GUI update error: {e}")
 
             # Ensure GUI updates immediately after sensor state change
-            self.root.update_idletasks()
+            try:
+                self.root.update_idletasks()
+            except Exception as e:
+                print(f"⚠ GUI update error: {e}")
 
             self.write_status_to_file()
             # Log sensor state update to arduino_log.txt
@@ -430,7 +466,7 @@ class HydroponicsGUI:
             os.makedirs(os.path.dirname(sensor_log_path), exist_ok=True)
             with open(sensor_log_path, "a", newline="") as f:
                 writer = csv.writer(f)
-                if not file_exists:
+                if not file_exists or os.path.getsize(sensor_log_path) == 0:
                     writer.writerow(sensor_headers)
                 writer.writerow(sensor_row)
 

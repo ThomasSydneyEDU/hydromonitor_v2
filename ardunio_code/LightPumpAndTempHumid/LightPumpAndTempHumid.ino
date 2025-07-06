@@ -267,10 +267,16 @@ void overrideDevice(String command) {
 
     if (state == "ON") {
         digitalWrite(relayPin, LOW);
+        if (command.startsWith("HE:")) {
+            digitalWrite(RELAY_CIRCULATION_FAN, LOW);  // Ensure fan is also ON
+        }
         activateOverride();
         Serial.println(deviceName + " overridden to ON.");
     } else if (state == "OFF") {
         digitalWrite(relayPin, HIGH);
+        if (command.startsWith("HE:")) {
+            digitalWrite(RELAY_CIRCULATION_FAN, HIGH);  // Turn fan OFF with heater
+        }
         activateOverride();
         Serial.println(deviceName + " overridden to OFF.");
     } else {

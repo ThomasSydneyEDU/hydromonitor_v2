@@ -1,3 +1,13 @@
+// Heater timing enforcement
+unsigned long heaterOnStartTime = 0;
+bool heaterCooldownActive = false;
+unsigned long heaterCooldownStartTime = 0;
+const unsigned long heaterMaxOnDuration = 10 * 60 * 1000;  // 10 minutes
+const unsigned long heaterCooldownDuration = 10 * 60 * 1000;  // 10 minutes
+
+// Heater fail-safe for missing temp readings
+unsigned long lastValidIndoorTempTime = 0;
+const unsigned long heaterFailSafeTimeout = 30000;  // 30 seconds
 // Pin Definitions
 
 #define RELAY_LIGHTS_TOP 7
@@ -362,37 +372,44 @@ void runSchedule() {
         digitalWrite(RELAY_CIRCULATION_FAN, circulationFanOn ? LOW : HIGH);
     }
 
-    // Vent fan trigger with timeout and cooldown logic
+    // Vent fan trigger with timeout and cooldown logic (guard against NaN)
     int currentTemp = dhtIndoor.readTemperature();
     int currentHumid = dhtIndoor.readHumidity();
 
-    bool sensorTrigger = (currentTemp > 28 || currentHumid > 80);
+    if (!isnan(currentTemp) && !isnan(currentHumid)) {
+        // Only allow humidity to trigger the fan if temp > 22°C
+        bool sensorTrigger = (currentTemp > 28 || (currentTemp > 22 && currentHumid > 80));
 
-    if (sensorTrigger && !ventFanInCooldown) {
-        ventFanRecentlyOn = true;
-        ventFanOffDelayStart = millis();
-        digitalWrite(RELAY_VENT_FAN, LOW);
-    } else if (ventFanRecentlyOn) {
-        if (millis() - ventFanOffDelayStart < ventFanDelayDuration) {
+        if (sensorTrigger && !ventFanInCooldown) {
+            ventFanRecentlyOn = true;
+            ventFanOffDelayStart = millis();
             digitalWrite(RELAY_VENT_FAN, LOW);
+        } else if (ventFanRecentlyOn) {
+            if (millis() - ventFanOffDelayStart < ventFanDelayDuration) {
+                digitalWrite(RELAY_VENT_FAN, LOW);
+            } else {
+                ventFanRecentlyOn = false;
+                ventFanInCooldown = true;
+                ventFanCooldownStart = millis();
+                digitalWrite(RELAY_VENT_FAN, HIGH);
+            }
+        } else if (ventFanInCooldown) {
+            if (millis() - ventFanCooldownStart >= ventFanCooldownDuration) {
+                ventFanInCooldown = false;
+            }
+            digitalWrite(RELAY_VENT_FAN, HIGH);
         } else {
-            ventFanRecentlyOn = false;
-            ventFanInCooldown = true;
-            ventFanCooldownStart = millis();
             digitalWrite(RELAY_VENT_FAN, HIGH);
         }
-    } else if (ventFanInCooldown) {
-        if (millis() - ventFanCooldownStart >= ventFanCooldownDuration) {
-            ventFanInCooldown = false;
-        }
-        digitalWrite(RELAY_VENT_FAN, HIGH);
     } else {
-        digitalWrite(RELAY_VENT_FAN, HIGH);
+        digitalWrite(RELAY_VENT_FAN, HIGH);  // turn off if readings invalid
     }
 
     // Heater control logic with day-night temperature simulation
     float indoorTemp = dhtIndoor.readTemperature();
     if (!isnan(indoorTemp)) {
+        lastValidIndoorTempTime = millis();  // Update on valid reading
+
         bool isDaytime = (hours >= 7 && hours < 19);
         float onThreshold = isDaytime ? 20.0 : 16.0;
         float offThreshold = isDaytime ? 22.0 : 18.0;
@@ -400,18 +417,40 @@ void runSchedule() {
         static bool lastHeaterState = HIGH;
         int newHeaterState = digitalRead(RELAY_HEATER);
 
-        if (indoorTemp < onThreshold) {
-            digitalWrite(RELAY_HEATER, LOW); // ON
-            digitalWrite(RELAY_CIRCULATION_FAN, LOW); // Also turn on fan
-        } else if (indoorTemp >= offThreshold) {
-            digitalWrite(RELAY_HEATER, HIGH); // OFF
-            digitalWrite(RELAY_CIRCULATION_FAN, HIGH); // Also turn off fan
+        // Heater timing enforcement logic
+        if (heaterCooldownActive && millis() - heaterCooldownStartTime < heaterCooldownDuration) {
+            digitalWrite(RELAY_HEATER, HIGH);  // Enforce cooldown
+            digitalWrite(RELAY_CIRCULATION_FAN, HIGH);
+        } else {
+            heaterCooldownActive = false;  // Cooldown expired
+
+            if (indoorTemp < onThreshold) {
+                if (digitalRead(RELAY_HEATER) == HIGH) {
+                    heaterOnStartTime = millis();  // Mark heater start time
+                }
+                digitalWrite(RELAY_HEATER, LOW);
+                digitalWrite(RELAY_CIRCULATION_FAN, LOW);
+            } else if (indoorTemp >= offThreshold || (digitalRead(RELAY_HEATER) == LOW && millis() - heaterOnStartTime >= heaterMaxOnDuration)) {
+                digitalWrite(RELAY_HEATER, HIGH);
+                digitalWrite(RELAY_CIRCULATION_FAN, HIGH);
+                if (digitalRead(RELAY_HEATER) == LOW) {
+                    heaterCooldownActive = true;
+                    heaterCooldownStartTime = millis();
+                }
+            }
         }
 
         newHeaterState = digitalRead(RELAY_HEATER);
         if (newHeaterState != lastHeaterState) {
             sendRelayState();
             lastHeaterState = newHeaterState;
+        }
+    } else {
+        // Fail-safe: shut off heater if no valid reading for 30 seconds
+        if (millis() - lastValidIndoorTempTime > heaterFailSafeTimeout) {
+            digitalWrite(RELAY_HEATER, HIGH);
+            digitalWrite(RELAY_CIRCULATION_FAN, HIGH);
+            Serial.println("⚠ Heater shut off: no valid indoor temp reading for 30s.");
         }
     }
 }

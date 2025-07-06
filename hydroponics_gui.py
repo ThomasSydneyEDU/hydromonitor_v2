@@ -62,10 +62,10 @@ class HydroponicsGUI:
         self.switches_frame = tk.Frame(self.root, bg=default_bg)
         # Add relay columns to switches_frame
         self.relay_column_1 = tk.Frame(self.switches_frame, bg=default_bg)
-        self.relay_column_1.pack(side=tk.LEFT, expand=True, padx=10)
+        self.relay_column_1.pack(side=tk.LEFT, expand=True, padx=10, anchor="n")
 
         self.relay_column_2 = tk.Frame(self.switches_frame, bg=default_bg)
-        self.relay_column_2.pack(side=tk.RIGHT, expand=True, padx=10)
+        self.relay_column_2.pack(side=tk.RIGHT, expand=True, padx=10, anchor="n")
 
         # --- Group buttons into labeled frames in relay columns ---
         self.lights_frame = tk.LabelFrame(self.relay_column_1, text="Lights", font=("Helvetica", 12, "bold"), bg=default_bg, fg="black")
@@ -74,13 +74,12 @@ class HydroponicsGUI:
         self.pumps_frame = tk.LabelFrame(self.relay_column_1, text="Pumps", font=("Helvetica", 12, "bold"), bg=default_bg, fg="black")
         self.pumps_frame.pack(fill=tk.BOTH, expand=True, pady=5)
 
-
-        # Heater button (moved from misc_frame to its own frame in relay_column_1)
-        self.heater_frame = tk.LabelFrame(self.relay_column_1, text="Heater", font=("Helvetica", 12, "bold"), bg=default_bg, fg="black")
-        self.heater_frame.pack(fill=tk.BOTH, expand=True, pady=5)
-
         self.fans_frame = tk.LabelFrame(self.relay_column_2, text="Fans", font=("Helvetica", 12, "bold"), bg=default_bg, fg="black")
         self.fans_frame.pack(fill=tk.BOTH, expand=True, pady=5)
+
+        # Heater button (moved from relay_column_1 to relay_column_2, below fans_frame)
+        self.heater_frame = tk.LabelFrame(self.relay_column_2, text="Heater", font=("Helvetica", 12, "bold"), bg=default_bg, fg="black")
+        self.heater_frame.pack(fill=tk.BOTH, expand=True, pady=5)
 
         self.misc_frame = tk.LabelFrame(self.relay_column_2, text="EC/pH Acquisition", font=("Helvetica", 12, "bold"), bg=default_bg, fg="black")
         self.misc_frame.pack(fill=tk.BOTH, expand=True, pady=5)

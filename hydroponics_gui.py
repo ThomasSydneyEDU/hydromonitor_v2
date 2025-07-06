@@ -4,6 +4,7 @@ from datetime import datetime
 import json
 import os
 import json
+import csv
 from gui_helpers import (
     update_connection_status,
 )
@@ -248,6 +249,9 @@ class HydroponicsGUI:
                         if not response:
                             continue  # Skip empty lines
                         print(f"[ARDUINO] {response}")
+                        # Log every Arduino message to arduino_log.txt
+                        with open("arduino_log.txt", "a") as log_file:
+                            log_file.write(f"{datetime.now().isoformat()} - {response}\n")
                         if response.startswith("RSTATE:"):
                             self.update_relay_states(response)
                         elif response.startswith("SSTATE:"):
@@ -329,6 +333,29 @@ class HydroponicsGUI:
             self.connection_indicator.create_oval(2, 2, 18, 18, fill="green")
 
             self.write_status_to_file()
+            # Log relay state update to arduino_log.txt
+            with open("arduino_log.txt", "a") as log_file:
+                log_file.write(f"{datetime.now().isoformat()} - RELAY: {response}\n")
+
+            # Log relay state to CSV
+            relay_log_path = os.path.join("hydro_dashboard", "relay_log.csv")
+            relay_headers = [
+                "timestamp",
+                "top_lights", "bottom_lights",
+                "pump_top", "pump_bottom",
+                "fan_vent", "fan_circ",
+                "heater"
+            ]
+            relay_row = [datetime.now().isoformat()]
+            for code in ['LT', 'LB', 'PT', 'PB', 'FV', 'FC', 'HE']:
+                relay_row.append(relay_states.get(code, ""))
+            file_exists = os.path.exists(relay_log_path)
+            os.makedirs(os.path.dirname(relay_log_path), exist_ok=True)
+            with open(relay_log_path, "a", newline="") as f:
+                writer = csv.writer(f)
+                if not file_exists:
+                    writer.writerow(relay_headers)
+                writer.writerow(relay_row)
 
         except Exception as e:
             print(f"⚠ Error parsing relay state: {e}")
@@ -380,6 +407,33 @@ class HydroponicsGUI:
             self.root.update_idletasks()
 
             self.write_status_to_file()
+            # Log sensor state update to arduino_log.txt
+            with open("arduino_log.txt", "a") as log_file:
+                log_file.write(f"{datetime.now().isoformat()} - SENSOR: {response}\n")
+
+            # Log sensor data to CSV
+            sensor_log_path = os.path.join("hydro_dashboard", "sensor_log.csv")
+            sensor_headers = [
+                "timestamp",
+                "air_temp_indoor", "humidity_indoor",
+                "air_temp_outdoor", "humidity_outdoor",
+                "water_temp_top", "water_temp_bottom",
+                "float_top", "float_bottom"
+            ]
+            sensor_row = [
+                datetime.now().isoformat(),
+                temp_indoor, humid_indoor,
+                temp_outdoor, humid_outdoor,
+                water_temp1, water_temp2,
+                float_top, float_bottom
+            ]
+            file_exists = os.path.exists(sensor_log_path)
+            os.makedirs(os.path.dirname(sensor_log_path), exist_ok=True)
+            with open(sensor_log_path, "a", newline="") as f:
+                writer = csv.writer(f)
+                if not file_exists:
+                    writer.writerow(sensor_headers)
+                writer.writerow(sensor_row)
 
         except Exception as e:
             print(f"⚠ Error parsing sensor state: {e}")

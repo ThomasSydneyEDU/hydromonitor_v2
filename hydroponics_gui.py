@@ -260,26 +260,16 @@ class HydroponicsGUI:
                         elif response.startswith("SSTATE:"):
                             self.update_sensor_states(response)
                         elif response.startswith("TIME:"):
-                            try:
-                                time_parts = response.split(":")
-                                if len(time_parts) != 4:
-                                    print(f"⚠ Malformed TIME message: {response}")
-                                    continue
-                                _, hour_str, minute_str, second_str = time_parts
-                                hours, minutes, seconds = map(int, [hour_str, minute_str, second_str])
-                                arduino_time = datetime.now().replace(hour=hours, minute=minutes, second=seconds, microsecond=0)
-                                system_time = datetime.now().replace(microsecond=0)
-                                self.last_arduino_time = arduino_time
-                                self.last_time_received_timestamp = datetime.now()
+                            # Use system time for logging and display
+                            now = datetime.now()
+                            self.last_arduino_time = now
+                            self.last_time_received_timestamp = now
+                            self.clock_label.config(text=now.strftime("%H:%M:%S"), fg="black")
 
-                                delta = abs((system_time - arduino_time).total_seconds())
-
-                                if delta <= 5:
-                                    self.clock_label.config(text=arduino_time.strftime("%H:%M:%S"), fg="black")
-                                else:
-                                    self.clock_label.config(text=arduino_time.strftime("%H:%M:%S"), fg="red")
-                            except Exception as e:
-                                print(f"⚠ Failed to parse TIME message: {response} -> {e}")
+                            # Also record the reported Arduino time for diagnostics
+                            arduino_time_str = response.split(":", 1)[1].strip()
+                            with open("arduino_log.txt", "a") as log_file:
+                                log_file.write(f"{now.isoformat()} - ARDUINO_TIME: {arduino_time_str}\n")
                 except Exception as e:
                     print(f"Error reading state update: {e}")
                     break

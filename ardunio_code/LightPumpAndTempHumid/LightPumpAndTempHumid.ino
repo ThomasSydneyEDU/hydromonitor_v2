@@ -465,5 +465,6 @@ void runSchedule() {
             Serial.println("⚠ Heater shut off: no valid indoor temp reading for 30s.");
         }
     }
-}
+    // Reset watchdog timer at the end of loop
     wdt_reset();  // Reset watchdog timer
+}

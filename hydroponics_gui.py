@@ -307,6 +307,13 @@ class HydroponicsGUI:
                 writer.writerow(["timestamp", "arduino_connected", "seconds_since_last_message"])
             writer.writerow(row)
 
+        # Also log to plain text log
+        try:
+            with open("hydro_dashboard/system_health.txt", "a") as f:
+                f.write(f"{timestamp} - Connected: {arduino_connected}, Seconds since last: {seconds_since_last}\n")
+        except Exception as e:
+            print(f"[ERROR] Could not write to system_health.txt: {e}")
+
         # Attempt automatic reconnection if no data received for over 2 minutes
         if isinstance(seconds_since_last, (int, float)) and seconds_since_last > 120:
             self.log_health_event("No data from Arduino in 2+ minutes. Attempting reconnect...")
@@ -316,6 +323,7 @@ class HydroponicsGUI:
                 if self.arduino:
                     self.log_health_event("Reconnected to Arduino.")
                     send_command_to_arduino(self.arduino, "GET_STATE\n")
+                    self.start_relay_state_listener()
             except Exception as e:
                 self.log_health_event(f"Reconnection failed: {e}")
 

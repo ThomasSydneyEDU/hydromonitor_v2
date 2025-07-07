@@ -1,3 +1,5 @@
+// Watchdog timer for system reliability
+#include <avr/wdt.h>
 // Heater timing enforcement
 unsigned long heaterOnStartTime = 0;
 bool heaterCooldownActive = false;
@@ -68,8 +70,8 @@ void sendTimeStatus() {
 bool overrideActive = false;
 unsigned long overrideEndTime = 0;  // Overrides expire after 10 minutes
 
-// Increase override duration to 15 minutes
-const unsigned long overrideDuration = 900000; // 15-minute override
+// Override duration set to 5 minutes
+const unsigned long overrideDuration = 300000; // 5-minute override
 
 // Vent fan timeout
 bool ventFanRecentlyOn = false;
@@ -120,6 +122,8 @@ void setup() {
     sensor2.begin();
 
     Serial.println("Arduino is ready. Default time: 00:00. Running schedule.");
+
+    wdt_enable(WDTO_8S);  // Enable watchdog timer with 8-second timeout
 }
 
 void loop() {
@@ -462,3 +466,4 @@ void runSchedule() {
         }
     }
 }
+    wdt_reset();  // Reset watchdog timer

@@ -1,5 +1,4 @@
 // Watchdog timer for system reliability
-#include <avr/wdt.h>
 // Heater timing enforcement
 unsigned long heaterOnStartTime = 0;
 bool heaterCooldownActive = false;
@@ -122,11 +121,15 @@ void setup() {
     sensor2.begin();
 
     Serial.println("Arduino is ready. Default time: 00:00. Running schedule.");
-
-    wdt_enable(WDTO_8S);  // Enable watchdog timer with 8-second timeout
 }
 
 void loop() {
+    static unsigned long lastLoopTime = 0;
+    if (millis() - lastLoopTime > 30000) {
+        Serial.println("⚠ Loop took too long — resetting manually.");
+        NVIC_SystemReset();  // Safe reset method on UNO R4
+    }
+    lastLoopTime = millis();
     unsigned long currentMillis = millis();
 
     // Increment time every second
@@ -465,6 +468,4 @@ void runSchedule() {
             Serial.println("⚠ Heater shut off: no valid indoor temp reading for 30s.");
         }
     }
-    // Reset watchdog timer at the end of loop
-    wdt_reset();  // Reset watchdog timer
 }

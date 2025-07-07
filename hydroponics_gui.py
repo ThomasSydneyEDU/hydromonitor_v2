@@ -273,6 +273,8 @@ class HydroponicsGUI:
                             arduino_time_str = response.split(":", 1)[1].strip()
                             with open("arduino_log.txt", "a") as log_file:
                                 log_file.write(f"{now.isoformat()} - ARDUINO_TIME: {arduino_time_str}\n")
+                                # Log manual timestamp comparison for every TIME message
+                                log_file.write(f"{datetime.now().isoformat()} - MANUAL_TIMESTAMP_COMPARISON: PC={datetime.now().strftime('%H:%M:%S')} vs ARDUINO={arduino_time_str}\n")
                 except Exception as e:
                     print(f"Error reading state update: {e}")
                     break

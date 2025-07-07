@@ -45,9 +45,6 @@ df = pd.DataFrame(parsed_data).sort_values("timestamp").drop_duplicates("timesta
 df.set_index("timestamp", inplace=True)
 df = df.ffill().dropna()
 
-# Filter to only show last 200 entries
-df = df.tail(200)
-
 # Plotting in three horizontal (stacked) subplots
 fig, axes = plt.subplots(nrows=3, ncols=1, figsize=(12, 8), sharex=True)
 

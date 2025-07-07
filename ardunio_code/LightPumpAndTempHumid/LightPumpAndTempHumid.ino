@@ -148,12 +148,20 @@ void loop() {
         runSchedule();
     }
 
-    // Listen for Pi commands
-    if (Serial.available() > 0) {
-        String command = Serial.readStringUntil('\n');
-        command.trim();
-        handleCommand(command);
-        sendRelayState();  // Send updated state immediately after a change
+    // Listen for Pi commands (non-blocking serial read)
+    static String serialBuffer = "";
+    while (Serial.available()) {
+        char c = Serial.read();
+        if (c == '\n') {
+            serialBuffer.trim();
+            if (serialBuffer.length() > 0) {
+                handleCommand(serialBuffer);
+                sendRelayState();  // Send updated state immediately after a change
+            }
+            serialBuffer = "";
+        } else {
+            serialBuffer += c;
+        }
     }
 }
 

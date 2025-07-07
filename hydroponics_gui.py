@@ -285,6 +285,41 @@ class HydroponicsGUI:
             writer = csv.writer(f)
             writer.writerow([datetime.now().isoformat(), message])
 
+    def log_system_health(self):
+        health_log_path = os.path.join("hydro_dashboard", "system_health.csv")
+        os.makedirs(os.path.dirname(health_log_path), exist_ok=True)
+
+        timestamp = datetime.now().isoformat()
+        arduino_connected = bool(self.arduino)
+        if self.last_time_received_timestamp:
+            seconds_since_last = (datetime.now() - self.last_time_received_timestamp).total_seconds()
+        else:
+            seconds_since_last = "N/A"
+
+        row = [timestamp, arduino_connected, seconds_since_last]
+
+        file_exists = os.path.exists(health_log_path)
+        with open(health_log_path, "a", newline="") as f:
+            writer = csv.writer(f)
+            if not file_exists or os.path.getsize(health_log_path) == 0:
+                writer.writerow(["timestamp", "arduino_connected", "seconds_since_last_message"])
+            writer.writerow(row)
+
+        # Attempt automatic reconnection if no data received for over 2 minutes
+        if isinstance(seconds_since_last, (int, float)) and seconds_since_last > 120:
+            self.log_health_event("No data from Arduino in 2+ minutes. Attempting reconnect...")
+            try:
+                from arduino_helpers import connect_to_arduino
+                self.arduino = connect_to_arduino()
+                if self.arduino:
+                    self.log_health_event("Reconnected to Arduino.")
+                    send_command_to_arduino(self.arduino, "GET_STATE\n")
+            except Exception as e:
+                self.log_health_event(f"Reconnection failed: {e}")
+
+        # Schedule next check
+        self.root.after(60000, self.log_system_health)
+
     def update_clock(self):
         """Update the GUI clock based on Arduino or fallback."""
         now = datetime.now()
@@ -523,38 +558,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-    def log_system_health(self):
-        health_log_path = os.path.join("hydro_dashboard", "system_health.csv")
-        os.makedirs(os.path.dirname(health_log_path), exist_ok=True)
-
-        timestamp = datetime.now().isoformat()
-        arduino_connected = bool(self.arduino)
-        if self.last_time_received_timestamp:
-            seconds_since_last = (datetime.now() - self.last_time_received_timestamp).total_seconds()
-        else:
-            seconds_since_last = "N/A"
-
-        row = [timestamp, arduino_connected, seconds_since_last]
-
-        file_exists = os.path.exists(health_log_path)
-        with open(health_log_path, "a", newline="") as f:
-            writer = csv.writer(f)
-            if not file_exists or os.path.getsize(health_log_path) == 0:
-                writer.writerow(["timestamp", "arduino_connected", "seconds_since_last_message"])
-            writer.writerow(row)
-
-        # Attempt automatic reconnection if no data received for over 2 minutes
-        if isinstance(seconds_since_last, (int, float)) and seconds_since_last > 120:
-            self.log_health_event("No data from Arduino in 2+ minutes. Attempting reconnect...")
-            try:
-                from arduino_helpers import connect_to_arduino
-                self.arduino = connect_to_arduino()
-                if self.arduino:
-                    self.log_health_event("Reconnected to Arduino.")
-                    send_command_to_arduino(self.arduino, "GET_STATE\n")
-            except Exception as e:
-                self.log_health_event(f"Reconnection failed: {e}")
-
-        # Schedule next check
-        self.root.after(60000, self.log_system_health)

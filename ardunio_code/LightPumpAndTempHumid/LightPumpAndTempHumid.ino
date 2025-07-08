@@ -1,4 +1,10 @@
-// Watchdog timer for system reliability
+
+#include <Adafruit_Sensor.h>
+#include <DHT.h>
+#include <DHT_U.h>
+#include <OneWire.h>
+#include <DallasTemperature.h>// Watchdog timer for system reliability
+
 // Heater timing enforcement
 unsigned long heaterOnStartTime = 0;
 bool heaterCooldownActive = false;
@@ -28,6 +34,21 @@ const unsigned long heaterFailSafeTimeout = 30000;  // 30 seconds
 #define ONE_WIRE_BUS_1 2
 #define ONE_WIRE_BUS_2 3
 
+
+// Helper functions for smoothed heater thresholds
+float getHeaterOnThreshold(float hour) {
+    float base = 17.5 + 7.5 * sin((hour - 7.0) / 24.0 * 2 * PI);
+    if (base < 14.0) return 14.0;
+    if (base > 22.0) return 22.0;
+    return base;
+}
+
+float getHeaterOffThreshold(float hour) {
+    float base = getHeaterOnThreshold(hour) + 2.0;
+    if (base < 16.0) return 16.0;
+    if (base > 24.0) return 24.0;
+    return base;
+}
 
 // Include DHT Sensor Library
 #include <Adafruit_Sensor.h>
@@ -425,9 +446,9 @@ void runSchedule() {
     if (!isnan(indoorTemp)) {
         lastValidIndoorTempTime = millis();  // Update on valid reading
 
-        bool isDaytime = (hours >= 7 && hours < 19);
-        float onThreshold = isDaytime ? 20.0 : 16.0;
-        float offThreshold = isDaytime ? 22.0 : 18.0;
+        float hourNow = hours + minutes / 60.0;
+        float onThreshold = getHeaterOnThreshold(hourNow);
+        float offThreshold = getHeaterOffThreshold(hourNow);
 
         static bool lastHeaterState = HIGH;
         int newHeaterState = digitalRead(RELAY_HEATER);

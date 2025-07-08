@@ -174,8 +174,6 @@ class HydroponicsGUI:
         # Schedule periodic time sync every 10 minutes
         self.root.after(10 * 60 * 1000, self.schedule_periodic_time_sync)
 
-        # Request relay state from Arduino
-        send_command_to_arduino(self.arduino, "GET_STATE\n")
 
         # Start listening for relay state updates
         self.start_relay_state_listener()
@@ -184,6 +182,9 @@ class HydroponicsGUI:
         self.schedule_status_write()
         # Schedule periodic system health logging
         self.log_system_health()
+
+        # Schedule periodic environment data logging
+        self.schedule_environment_log()
 
 
 
@@ -552,6 +553,33 @@ class HydroponicsGUI:
                 send_command_to_arduino(self.arduino, full_command)
             except Exception as e:
                 print(f"Error sending time to Arduino: {e}")
+
+    def schedule_environment_log(self):
+        self.log_environment_data()
+        self.root.after(15 * 60 * 1000, self.schedule_environment_log)
+
+    def log_environment_data(self):
+        env_log_path = os.path.join("hydro_dashboard", "environment_log.csv")
+        os.makedirs(os.path.dirname(env_log_path), exist_ok=True)
+
+        # Extract data from GUI
+        temp_text = self.temperature_label.cget("text")
+        humid_text = self.humidity_label.cget("text")
+
+        indoor_temp = temp_text.split("/")[0].strip().replace("°C", "")
+        outdoor_temp = temp_text.split("/")[1].strip().replace("°C", "") if "/" in temp_text else ""
+        indoor_humid = humid_text.split("/")[0].strip().replace("%", "")
+        outdoor_humid = humid_text.split("/")[1].strip().replace("%", "") if "/" in humid_text else ""
+
+        timestamp = datetime.now().isoformat()
+        row = [timestamp, indoor_temp, outdoor_temp, indoor_humid, outdoor_humid]
+
+        file_exists = os.path.exists(env_log_path)
+        with open(env_log_path, "a", newline="") as f:
+            writer = csv.writer(f)
+            if not file_exists or os.path.getsize(env_log_path) == 0:
+                writer.writerow(["timestamp", "indoor_temp", "outdoor_temp", "indoor_humidity", "outdoor_humidity"])
+            writer.writerow(row)
 
 
 

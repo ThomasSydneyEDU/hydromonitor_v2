@@ -1,3 +1,7 @@
+// Helper for ramped watering intervals (peaks at 1 PM)
+float getWateringTimeMultiplier(float hour) {
+    return 1.0 - sin((hour - 7.0) / 24.0 * 2 * PI);  // Peaks at 1 PM
+}
 
 #include <Adafruit_Sensor.h>
 #include <DHT.h>
@@ -383,21 +387,26 @@ void runSchedule() {
     digitalWrite(RELAY_LIGHTS_TOP, lightsState ? LOW : HIGH);
     digitalWrite(RELAY_LIGHTS_BOTTOM, lightsState ? LOW : HIGH);
 
-    // **Pumps Schedule: ON for 5 minutes at a variable interval based on air temperature**
+    // **Pumps Schedule: ON for 5 minutes at a ramped interval based on air temperature and time of day**
     bool daylightHours = (hours >= 7 && hours < 19);
-    int airTemp = (int)dhtIndoor.readTemperature();  // Read air temperature directly
-    if (isnan(airTemp)) airTemp = 20;  // fallback if invalid
-    int wateringInterval;
+    int airTemp = (int)dhtIndoor.readTemperature();
+    if (isnan(airTemp)) airTemp = 20;
 
+    int baseInterval;
     if (airTemp < 15) {
-      wateringInterval = 90; // less frequent in cold weather
+        baseInterval = 90;
     } else if (airTemp < 25) {
-      wateringInterval = 60; // moderate interval
+        baseInterval = 60;
     } else {
-      wateringInterval = 30; // more frequent in warm weather
+        baseInterval = 30;
     }
 
-    bool dynamicCycle = (minutes % wateringInterval < 5);  // ON for 5 minutes
+    float hourNow = hours + minutes / 60.0;
+    float rampMultiplier = getWateringTimeMultiplier(hourNow);  // 0 to 2
+    int adjustedInterval = baseInterval * rampMultiplier;
+    if (adjustedInterval < 15) adjustedInterval = 15;  // minimum safety limit
+
+    bool dynamicCycle = (minutes % adjustedInterval < 5);  // ON for 5 minutes
     bool pumpsState = daylightHours && dynamicCycle;
     digitalWrite(RELAY_PUMP_TOP, pumpsState ? LOW : HIGH);
     digitalWrite(RELAY_PUMP_BOTTOM, pumpsState ? LOW : HIGH);

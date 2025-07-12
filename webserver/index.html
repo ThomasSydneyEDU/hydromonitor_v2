@@ -102,7 +102,19 @@
         },
         options: {
           responsive: true,
-          scales: { x: { type: 'time', time: { tooltipFormat: 'MMM D, h:mm a', unit: 'hour' } }, y: { title: { display: true, text: '°C' } } }
+          scales: {
+            x: {
+              type: 'time',
+              time: {
+                tooltipFormat: 'MMM D, h:mm a',
+                unit: 'hour',
+                zone: 'local'
+              }
+            },
+            y: {
+              title: { display: true, text: '°C' }
+            }
+          }
         }
       });
 
@@ -118,7 +130,21 @@
         },
         options: {
           responsive: true,
-          scales: { x: { type: 'time', time: { tooltipFormat: 'MMM D, h:mm a', unit: 'hour' } }, y: { title: { display: true, text: '%' }, min: 0, max: 100 } }
+          scales: {
+            x: {
+              type: 'time',
+              time: {
+                tooltipFormat: 'MMM D, h:mm a',
+                unit: 'hour',
+                zone: 'local'
+              }
+            },
+            y: {
+              title: { display: true, text: '%' },
+              min: 0,
+              max: 100
+            }
+          }
         }
       });
     }

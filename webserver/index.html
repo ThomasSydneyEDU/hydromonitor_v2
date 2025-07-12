@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Hydroponics Dashboard</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 2rem; }
+    h1 { margin-bottom: 1rem; }
+    .container {
+      display: flex;
+      gap: 2rem;
+    }
+    #status {
+      flex: 1;
+    }
+    #charts {
+      flex: 2;
+    }
+    .sensor { margin-bottom: 1rem; }
+    .label { font-weight: bold; }
+    canvas {
+      max-width: 100%;
+      height: 300px;
+      margin-bottom: 2rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>Hydroponics Dashboard</h1>
+  <div class="container">
+    <div id="status">
+      Loading current data...
+    </div>
+    <div id="charts">
+      <canvas id="tempChart"></canvas>
+      <canvas id="humidityChart"></canvas>
+    </div>
+  </div>
+
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/luxon@3/build/global/luxon.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1"></script>
+
+
+  <script>
+    // Current status fetch and display (existing code, slightly adjusted)
+    async function fetchStatus() {
+      try {
+        const response = await fetch('/api/status');
+        if (!response.ok) throw new Error('Network response was not ok');
+        const data = await response.json();
+
+        const statusDiv = document.getElementById('status');
+        statusDiv.innerHTML = `
+          <div class="sensor"><span class="label">Timestamp:</span> ${data.timestamp || 'N/A'}</div>
+          <div class="sensor"><span class="label">Air Temp (Indoor):</span> ${data["Air Temp (Indoor)"] || 'N/A'} °C</div>
+          <div class="sensor"><span class="label">Air Temp (Outdoor):</span> ${data["Air Temp (Outdoor)"] || 'N/A'} °C</div>
+          <div class="sensor"><span class="label">Humidity (Indoor):</span> ${data["Humidity (Indoor)"] || 'N/A'} %</div>
+          <div class="sensor"><span class="label">Humidity (Outdoor):</span> ${data["Humidity (Outdoor)"] || 'N/A'} %</div>
+          <div class="sensor"><span class="label">Water Temp Top:</span> ${data["Water Temp Top"] || 'N/A'} °C</div>
+          <div class="sensor"><span class="label">Water Temp Bottom:</span> ${data["Water Temp Bottom"] || 'N/A'} °C</div>
+          <div class="sensor"><span class="label">Top Float:</span> ${data.top_float_low == 1 ? 'Low' : 'Okay'}</div>
+          <div class="sensor"><span class="label">Bottom Float:</span> ${data.bottom_float_low == 1 ? 'Low' : 'Okay'}</div>
+          <div class="sensor"><span class="label">Relay Fan Circ:</span> ${data.relay_fan_circ == 1 ? 'ON' : 'OFF'}</div>
+          <div class="sensor"><span class="label">Relay Fan Vent:</span> ${data.relay_fan_vent == 1 ? 'ON' : 'OFF'}</div>
+          <div class="sensor"><span class="label">Relay Heater:</span> ${data.relay_heater == 1 ? 'ON' : 'OFF'}</div>
+          <div class="sensor"><span class="label">Relay Lights Bottom:</span> ${data.relay_lights_bottom == 1 ? 'ON' : 'OFF'}</div>
+          <div class="sensor"><span class="label">Relay Lights Top:</span> ${data.relay_lights_top == 1 ? 'ON' : 'OFF'}</div>
+          <div class="sensor"><span class="label">Relay Pump Bottom:</span> ${data.relay_pump_bottom == 1 ? 'ON' : 'OFF'}</div>
+          <div class="sensor"><span class="label">Relay Pump Top:</span> ${data.relay_pump_top == 1 ? 'ON' : 'OFF'}</div>
+        `;
+      } catch (error) {
+        document.getElementById('status').innerText = 'Error loading data: ' + error;
+      }
+    }
+
+    // Plot variables
+    let tempChart, humidityChart;
+
+    // Initialize empty charts
+    function initCharts() {
+      const ctxTemp = document.getElementById('tempChart').getContext('2d');
+      tempChart = new Chart(ctxTemp, {
+        type: 'line',
+        data: {
+          labels: [],
+          datasets: [
+            { label: 'Air Temp Indoor', borderColor: 'red', data: [], fill: false },
+            { label: 'Air Temp Outdoor', borderColor: 'orange', data: [], fill: false }
+          ]
+        },
+        options: {
+          responsive: true,
+          scales: { x: { type: 'time', time: { tooltipFormat: 'MMM D, h:mm a', unit: 'hour' } }, y: { title: { display: true, text: '°C' } } }
+        }
+      });
+
+      const ctxHumid = document.getElementById('humidityChart').getContext('2d');
+      humidityChart = new Chart(ctxHumid, {
+        type: 'line',
+        data: {
+          labels: [],
+          datasets: [
+            { label: 'Humidity Indoor', borderColor: 'blue', data: [], fill: false },
+            { label: 'Humidity Outdoor', borderColor: 'teal', data: [], fill: false }
+          ]
+        },
+        options: {
+          responsive: true,
+          scales: { x: { type: 'time', time: { tooltipFormat: 'MMM D, h:mm a', unit: 'hour' } }, y: { title: { display: true, text: '%' }, min: 0, max: 100 } }
+        }
+      });
+    }
+
+    // Fetch historical data and update charts
+    async function fetchHistory() {
+      try {
+        const response = await fetch('/api/history');
+        if (!response.ok) throw new Error('Network response was not ok');
+        const data = await response.json();
+
+        const labels = data.map(d => new Date(d.timestamp));
+        const airTempIndoor = data.map(d => parseFloat(d["Air Temp (Indoor)"]) || null);
+        const airTempOutdoor = data.map(d => parseFloat(d["Air Temp (Outdoor)"]) || null);
+        const humidIndoor = data.map(d => parseFloat(d["Humidity (Indoor)"]) || null);
+        const humidOutdoor = data.map(d => parseFloat(d["Humidity (Outdoor)"]) || null);
+
+        // Update temp chart
+        tempChart.data.labels = labels;
+        tempChart.data.datasets[0].data = airTempIndoor;
+        tempChart.data.datasets[1].data = airTempOutdoor;
+        tempChart.update();
+
+        // Update humidity chart
+        humidityChart.data.labels = labels;
+        humidityChart.data.datasets[0].data = humidIndoor;
+        humidityChart.data.datasets[1].data = humidOutdoor;
+        humidityChart.update();
+
+      } catch (error) {
+        console.error('Error loading history:', error);
+      }
+    }
+
+    // Initialize dashboard
+    window.onload = () => {
+      fetchStatus();
+      initCharts();
+      fetchHistory();
+
+    //   setInterval(fetchStatus, 60000);  // Refresh current data every minute
+    //   setInterval(fetchHistory, 300000); // Refresh history every 5 minutes
+    };
+  </script>
+</body>
+</html>

@@ -40,24 +40,27 @@
   <!-- Chart.js CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/luxon@3/build/global/luxon.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1"></script>
-
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1"></script>
 
   <script>
     // URL constants for fetch calls
     const STATUS_URL = 'https://us-central1-hydroweb-fe1ae.cloudfunctions.net/getStatus';
     const HISTORY_URL = 'https://us-central1-hydroweb-fe1ae.cloudfunctions.net/getHistory';
 
-    // Current status fetch and display (existing code, slightly adjusted)
+    // Current status fetch and display (fixed timestamp display)
     async function fetchStatus() {
       try {
         const response = await fetch(STATUS_URL);
         if (!response.ok) throw new Error('Network response was not ok');
         const data = await response.json();
 
+        const timestamp = data.timestamp && data.timestamp.seconds
+          ? new Date(data.timestamp.seconds * 1000).toLocaleString()
+          : 'N/A';
+
         const statusDiv = document.getElementById('status');
         statusDiv.innerHTML = `
-          <div class="sensor"><span class="label">Timestamp:</span> ${data.timestamp || 'N/A'}</div>
+          <div class="sensor"><span class="label">Timestamp:</span> ${timestamp}</div>
           <div class="sensor"><span class="label">Air Temp (Indoor):</span> ${data["Air Temp (Indoor)"] || 'N/A'} °C</div>
           <div class="sensor"><span class="label">Air Temp (Outdoor):</span> ${data["Air Temp (Outdoor)"] || 'N/A'} °C</div>
           <div class="sensor"><span class="label">Humidity (Indoor):</span> ${data["Humidity (Indoor)"] || 'N/A'} %</div>
@@ -82,7 +85,7 @@
     // Plot variables
     let tempChart, humidityChart;
 
-    // Initialize empty charts
+    // Initialize empty charts with local timezone
     function initCharts() {
       const ctxTemp = document.getElementById('tempChart').getContext('2d');
       tempChart = new Chart(ctxTemp, {
@@ -143,18 +146,21 @@
       });
     }
 
-    // Fetch historical data and update charts
+    // Fetch historical data and update charts, parsing Firestore timestamps
     async function fetchHistory() {
       try {
         const response = await fetch(HISTORY_URL);
         if (!response.ok) throw new Error('Network response was not ok');
         const data = await response.json();
 
-        const labels = data.map(d => new Date(d.timestamp));
-        const airTempIndoor = data.map(d => parseFloat(d["Air Temp (Indoor)"]) || null);
-        const airTempOutdoor = data.map(d => parseFloat(d["Air Temp (Outdoor)"]) || null);
-        const humidIndoor = data.map(d => parseFloat(d["Humidity (Indoor)"]) || null);
-        const humidOutdoor = data.map(d => parseFloat(d["Humidity (Outdoor)"]) || null);
+        // Filter data with valid timestamps
+        const filteredData = data.filter(d => d.timestamp && d.timestamp.seconds);
+
+        const labels = filteredData.map(d => new Date(d.timestamp.seconds * 1000));
+        const airTempIndoor = filteredData.map(d => parseFloat(d["Air Temp (Indoor)"]) || null);
+        const airTempOutdoor = filteredData.map(d => parseFloat(d["Air Temp (Outdoor)"]) || null);
+        const humidIndoor = filteredData.map(d => parseFloat(d["Humidity (Indoor)"]) || null);
+        const humidOutdoor = filteredData.map(d => parseFloat(d["Humidity (Outdoor)"]) || null);
 
         // Update temp chart
         tempChart.data.labels = labels;
@@ -179,8 +185,9 @@
       initCharts();
       fetchHistory();
 
-    //   setInterval(fetchStatus, 60000);  // Refresh current data every minute
-    //   setInterval(fetchHistory, 300000); // Refresh history every 5 minutes
+      // Optionally enable refresh intervals:
+      // setInterval(fetchStatus, 60000);
+      // setInterval(fetchHistory, 300000);
     };
   </script>
 </body>

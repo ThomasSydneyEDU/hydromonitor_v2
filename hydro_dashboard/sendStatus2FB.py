@@ -43,7 +43,7 @@ def get_5min_rounded_timestamp():
     now = datetime.utcnow()
     minute = (now.minute // 5) * 5
     rounded = now.replace(minute=minute, second=0, microsecond=0)
-    time_str = rounded.strftime("log_%H-%M")
+    time_str = rounded.strftime("log_%H-%M")  # Time only, no date
     return time_str
 
 def load_local_data():
@@ -122,22 +122,23 @@ def aggregate_2hour(df):
     df['time_bin'] = df['timestamp'].dt.floor('2H')
 
     def any_low(series):
-        return 1 if series.sum() > 0 else 0
+        # Fill NaNs with 0 to avoid NaN sum issues
+        return 1 if series.fillna(0).sum() > 0 else 0
 
     agg_funcs = {
-        'air_temp_indoor': 'mean',
-        'air_temp_outdoor': 'mean',
-        'humidity_indoor': 'mean',
-        'humidity_outdoor': 'mean',
-        'water_temp_top': 'mean',
-        'water_temp_bottom': 'mean',
-        'relay_lights_top': 'mean',
-        'relay_lights_bottom': 'mean',
-        'relay_pump_top': 'mean',
-        'relay_pump_bottom': 'mean',
-        'relay_fan_vent': 'mean',
-        'relay_fan_circ': 'mean',
-        'relay_heater': 'mean',
+        'air_temp_indoor': lambda x: x.dropna().mean(),
+        'air_temp_outdoor': lambda x: x.dropna().mean(),
+        'humidity_indoor': lambda x: x.dropna().mean(),
+        'humidity_outdoor': lambda x: x.dropna().mean(),
+        'water_temp_top': lambda x: x.dropna().mean(),
+        'water_temp_bottom': lambda x: x.dropna().mean(),
+        'relay_lights_top': lambda x: x.dropna().mean(),
+        'relay_lights_bottom': lambda x: x.dropna().mean(),
+        'relay_pump_top': lambda x: x.dropna().mean(),
+        'relay_pump_bottom': lambda x: x.dropna().mean(),
+        'relay_fan_vent': lambda x: x.dropna().mean(),
+        'relay_fan_circ': lambda x: x.dropna().mean(),
+        'relay_heater': lambda x: x.dropna().mean(),
         'float_top_low': any_low,
         'float_bottom_low': any_low
     }

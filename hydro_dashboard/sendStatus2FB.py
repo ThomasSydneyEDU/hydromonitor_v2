@@ -33,6 +33,15 @@ def initialize_firebase():
 
 def upload_status_to_firestore(db, status_data, timestamp_key, collection=FIRESTORE_COLLECTION_5MIN):
     try:
+        # Convert sensor fields to floats before upload
+        for key in ['Air Temp (Indoor)', 'Air Temp (Outdoor)', 'Humidity (Indoor)', 'Humidity (Outdoor)',
+                    'Water Temp Top', 'Water Temp Bottom']:
+            if key in status_data:
+                try:
+                    status_data[key] = float(str(status_data[key]).strip())
+                except Exception:
+                    status_data[key] = None
+
         print(f"[DEBUG] Preparing to upload to Firestore collection '{collection}' with doc ID '{timestamp_key}'")
         print(f"[DEBUG] Data: {status_data}")
         doc_ref = db.collection(collection).document(timestamp_key)

@@ -51,15 +51,9 @@
     // Current status fetch and display (existing code, slightly adjusted)
     async function fetchStatus() {
       try {
-        try {
-    const response = await fetch(STATUS_URL);
-    if (!response.ok) throw new Error('Network response was not ok');
-    const data = await response.json();
-
-    // existing status update code ...
-  } catch (error) {
-    document.getElementById('status').innerText = 'Error loading data: ' + error;
-  }
+        const response = await fetch(STATUS_URL);
+        if (!response.ok) throw new Error('Network response was not ok');
+        const data = await response.json();
 
         const statusDiv = document.getElementById('status');
         statusDiv.innerHTML = `

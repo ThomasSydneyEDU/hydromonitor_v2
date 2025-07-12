@@ -3,7 +3,7 @@ import threading
 from datetime import datetime
 import json
 import os
-import json
+import sys
 import csv
 from gui_helpers import (
     update_connection_status,
@@ -14,6 +14,8 @@ from arduino_helpers import connect_to_arduino, send_command_to_arduino
 class HydroponicsGUI:
     RELAY_STATE_LENGTH = 7
     SENSOR_STATE_LENGTH = 6
+    RESTART_THRESHOLD_SECONDS = 120  # 2 minutes
+
     def schedule_periodic_time_sync(self):
         """Resend current time to Arduino every 10 minutes."""
         self.set_time_on_arduino()
@@ -185,6 +187,9 @@ class HydroponicsGUI:
 
         # Schedule periodic environment data logging
         self.schedule_environment_log()
+
+        # Start watchdog to monitor Arduino connection
+        self.start_watchdog()
 
 
 
@@ -596,3 +601,26 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+    def start_watchdog(self):
+        """Start a periodic watchdog to monitor Arduino connection and restart GUI if needed."""
+        def watchdog_check():
+            if self.last_time_received_timestamp:
+                elapsed = (datetime.now() - self.last_time_received_timestamp).total_seconds()
+                if elapsed > self.RESTART_THRESHOLD_SECONDS:
+                    print(f"[WARN] No Arduino data for {elapsed} seconds. Restarting GUI...")
+                    self.restart_gui()
+                    return  # Stop watchdog after restart
+            # Schedule next check in 1 minute
+            self.root.after(60000, watchdog_check)
+
+        watchdog_check()
+
+    def restart_gui(self):
+        """Cleanly restart the GUI application."""
+        print("[INFO] Restarting the GUI application...")
+        self.root.destroy()  # Close the GUI window
+
+        # Relaunch the current Python script with same arguments
+        python = sys.executable
+        os.execl(python, python, *sys.argv)

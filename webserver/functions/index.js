@@ -1,30 +1,55 @@
-/**
- * Import function triggers from their respective submodules:
- *
- * const {onCall} = require("firebase-functions/v2/https");
- * const {onDocumentWritten} = require("firebase-functions/v2/firestore");
- *
- * See a full list of supported triggers at https://firebase.google.com/docs/functions
- */
+const functions = require("firebase-functions");
+const admin = require("firebase-admin");
+admin.initializeApp();
 
-const {setGlobalOptions} = require("firebase-functions");
+const db = admin.firestore();
 
-// For cost control, you can set the maximum number of containers that can be
-// running at the same time. This helps mitigate the impact of unexpected
-// traffic spikes by instead downgrading performance. This limit is a
-// per-function limit. You can override the limit for each function using the
-// `maxInstances` option in the function's options, e.g.
-// `onRequest({ maxInstances: 5 }, (req, res) => { ... })`.
-// NOTE: setGlobalOptions does not apply to functions using the v1 API. V1
-// functions should each use functions.runWith({ maxInstances: 10 }) instead.
-// In the v1 API, each function can only serve one request per container, so
-// this will be the maximum concurrent request count.
-setGlobalOptions({maxInstances: 10});
+setGlobalOptions({ maxInstances: 10 });
 
-// Create and deploy your first functions
-// https://firebase.google.com/docs/functions/get-started
+// Get latest sensor status
+exports.getStatus = functions.https.onRequest(async (req, res) => {
+  try {
+    const snapshot = await db.collection("Current Days Log")
+      .orderBy("timestamp", "desc")
+      .limit(1)
+      .get();
 
-// exports.helloWorld = onRequest((request, response) => {
-//   logger.info("Hello logs!", {structuredData: true});
-//   response.send("Hello from Firebase!");
-// });
+    if (snapshot.empty) {
+      res.status(404).json({ error: "No data found" });
+      return;
+    }
+
+    res.json(snapshot.docs[0].data());
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get sensor history
+exports.getHistory = functions.https.onRequest(async (req, res) => {
+  try {
+    const snapshot = await db.collection("Current Days Log")
+      .orderBy("timestamp")
+      .get();
+
+    if (snapshot.empty) {
+      res.status(404).json({ error: "No data found" });
+      return;
+    }
+
+    const history = snapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        timestamp: data.timestamp ? data.timestamp.toDate().toISOString() : null,
+        "Air Temp (Indoor)": data["Air Temp (Indoor)"],
+        "Air Temp (Outdoor)": data["Air Temp (Outdoor)"],
+        "Humidity (Indoor)": data["Humidity (Indoor)"],
+        "Humidity (Outdoor)": data["Humidity (Outdoor)"]
+      };
+    });
+
+    res.json(history);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});

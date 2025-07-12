@@ -44,12 +44,22 @@
 
 
   <script>
+    // URL constants for fetch calls
+    const STATUS_URL = 'https://us-central1-hydroweb-fe1ae.cloudfunctions.net/getStatus';
+    const HISTORY_URL = 'https://us-central1-hydroweb-fe1ae.cloudfunctions.net/getHistory';
+
     // Current status fetch and display (existing code, slightly adjusted)
     async function fetchStatus() {
       try {
-        const response = await fetch('/api/status');
-        if (!response.ok) throw new Error('Network response was not ok');
-        const data = await response.json();
+        try {
+    const response = await fetch(STATUS_URL);
+    if (!response.ok) throw new Error('Network response was not ok');
+    const data = await response.json();
+
+    // existing status update code ...
+  } catch (error) {
+    document.getElementById('status').innerText = 'Error loading data: ' + error;
+  }
 
         const statusDiv = document.getElementById('status');
         statusDiv.innerHTML = `
@@ -116,7 +126,7 @@
     // Fetch historical data and update charts
     async function fetchHistory() {
       try {
-        const response = await fetch('/api/history');
+        const response = await fetch(HISTORY_URL);
         if (!response.ok) throw new Error('Network response was not ok');
         const data = await response.json();
 

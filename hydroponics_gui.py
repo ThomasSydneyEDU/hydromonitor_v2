@@ -586,22 +586,6 @@ class HydroponicsGUI:
                 writer.writerow(["timestamp", "indoor_temp", "outdoor_temp", "indoor_humidity", "outdoor_humidity"])
             writer.writerow(row)
 
-
-
-
-
-def main():
-    arduino = connect_to_arduino()
-    root = tk.Tk()
-    gui = HydroponicsGUI(root, arduino)
-    root.mainloop()
-    if arduino:
-        arduino.close()
-
-
-if __name__ == "__main__":
-    main()
-
     def start_watchdog(self):
         """Start a periodic watchdog to monitor Arduino connection and restart GUI if needed."""
         def watchdog_check():
@@ -624,3 +608,15 @@ if __name__ == "__main__":
         # Relaunch the current Python script with same arguments
         python = sys.executable
         os.execl(python, python, *sys.argv)
+
+def main():
+    arduino = connect_to_arduino()
+    root = tk.Tk()
+    gui = HydroponicsGUI(root, arduino)
+    root.mainloop()
+    if arduino:
+        arduino.close()
+
+
+if __name__ == "__main__":
+    main()

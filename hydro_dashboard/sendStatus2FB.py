@@ -44,6 +44,9 @@ def upload_status_to_firestore(db, status_data, timestamp_key, collection=FIREST
 
         print(f"[DEBUG] Preparing to upload to Firestore collection '{collection}' with doc ID '{timestamp_key}'")
         print(f"[DEBUG] Data: {status_data}")
+        # Add local ISO 8601 timestamp for web clients
+        local_tz = pytz.timezone("Australia/Sydney")
+        status_data['timestamp_local'] = datetime.now(local_tz).isoformat()
         doc_ref = db.collection(collection).document(timestamp_key)
         doc_ref.set(status_data)
         print(f"[{datetime.now().isoformat()}] Uploaded status for {timestamp_key} to Firestore collection '{collection}'.")

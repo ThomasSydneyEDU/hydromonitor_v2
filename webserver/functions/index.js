@@ -1,7 +1,9 @@
 const functions = require("firebase-functions");
 const {setGlobalOptions} = require("firebase-functions");
 const admin = require("firebase-admin");
-const cors = require("cors")({origin: true});
+const cors = require("cors")({
+  origin: ["https://hydroweb-fe1ae.web.app"]
+});
 admin.initializeApp();
 
 const db = admin.firestore();

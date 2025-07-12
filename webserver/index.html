@@ -42,11 +42,9 @@
 
   <script>
     window.onload = () => {
-      // URL constants for fetch calls
       const STATUS_URL = 'https://us-central1-hydroweb-fe1ae.cloudfunctions.net/getStatus';
       const HISTORY_URL = 'https://us-central1-hydroweb-fe1ae.cloudfunctions.net/getHistory';
 
-      // Current status fetch and display with logging and flexible timestamp parsing
       async function fetchStatus() {
         try {
           const response = await fetch(STATUS_URL);
@@ -55,11 +53,7 @@
           console.log('Status data:', data);
 
           const timestamp = data.timestamp
-            ? (typeof data.timestamp === 'string'
-                ? new Date(data.timestamp).toLocaleString()
-                : (data.timestamp.seconds
-                    ? new Date(data.timestamp.seconds * 1000).toLocaleString()
-                    : 'N/A'))
+            ? new Date(data.timestamp).toLocaleString()
             : 'N/A';
 
           const statusDiv = document.getElementById('status');
@@ -86,10 +80,8 @@
         }
       }
 
-      // Plot variables
       let tempChart, humidityChart;
 
-      // Initialize empty charts with local timezone
       function initCharts() {
         const ctxTemp = document.getElementById('tempChart').getContext('2d');
         tempChart = new Chart(ctxTemp, {
@@ -150,7 +142,6 @@
         });
       }
 
-      // Fetch historical data and update charts, parsing Firestore timestamps
       async function fetchHistory() {
         try {
           const response = await fetch(HISTORY_URL);
@@ -160,25 +151,19 @@
 
           const filteredData = data.filter(d => d.timestamp);
           const labels = filteredData
-            .map(d => {
-              if (typeof d.timestamp === 'string') return new Date(d.timestamp);
-              if (d.timestamp.seconds) return new Date(d.timestamp.seconds * 1000);
-              return null;
-            })
-            .filter(d => d !== null);
+            .map(d => new Date(d.timestamp))
+            .filter(d => !isNaN(d));
 
           const airTempIndoor = filteredData.map(d => parseFloat(d["Air Temp (Indoor)"]) || null);
           const airTempOutdoor = filteredData.map(d => parseFloat(d["Air Temp (Outdoor)"]) || null);
           const humidIndoor = filteredData.map(d => parseFloat(d["Humidity (Indoor)"]) || null);
           const humidOutdoor = filteredData.map(d => parseFloat(d["Humidity (Outdoor)"]) || null);
 
-          // Update temp chart
           tempChart.data.labels = labels;
           tempChart.data.datasets[0].data = airTempIndoor;
           tempChart.data.datasets[1].data = airTempOutdoor;
           tempChart.update();
 
-          // Update humidity chart
           humidityChart.data.labels = labels;
           humidityChart.data.datasets[0].data = humidIndoor;
           humidityChart.data.datasets[1].data = humidOutdoor;
@@ -189,14 +174,9 @@
         }
       }
 
-      // Initialize dashboard
       fetchStatus();
       initCharts();
       fetchHistory();
-
-      // Optionally enable refresh intervals:
-      // setInterval(fetchStatus, 60000);
-      // setInterval(fetchHistory, 300000);
     };
   </script>
 </body>

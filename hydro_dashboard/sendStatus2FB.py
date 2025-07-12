@@ -6,6 +6,8 @@ import pandas as pd
 import firebase_admin
 from firebase_admin import credentials, firestore
 import traceback
+import pytz
+
 
 # --- Configuration ---
 SERVICE_ACCOUNT_KEY_PATH = '/home/tcar5787/APIkeys/hydrowebkey/serviceAccountKey.json'
@@ -40,10 +42,11 @@ def upload_status_to_firestore(db, status_data, timestamp_key, collection=FIREST
         print(f"[ERROR] Failed to upload to Firestore: {e}")
 
 def get_5min_rounded_timestamp():
-    now = datetime.utcnow()
+    tz = pytz.timezone("Australia/Sydney")
+    now = datetime.now(tz)
     minute = (now.minute // 5) * 5
     rounded = now.replace(minute=minute, second=0, microsecond=0)
-    time_str = rounded.strftime("log_%H-%M")  # Time only, no date
+    time_str = rounded.strftime("log_%H-%M")
     return time_str
 
 def load_local_data():
@@ -116,8 +119,9 @@ def aggregate_2hour(df):
     if df.empty:
         return pd.DataFrame()
 
+    tz = pytz.timezone("Australia/Sydney")
     df = df.copy()
-    df['timestamp'] = pd.to_datetime(df['timestamp'])
+    df['timestamp'] = pd.to_datetime(df['timestamp']).dt.tz_localize('UTC').dt.tz_convert(tz)
     df = df.dropna(subset=['timestamp'])
     df['time_bin'] = df['timestamp'].dt.floor('2H')
 

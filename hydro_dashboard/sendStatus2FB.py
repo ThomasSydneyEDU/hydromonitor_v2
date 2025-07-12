@@ -17,20 +17,34 @@ AGGREGATE_INTERVAL = 2 * 60 * 60  # 2 hours in seconds
 CHECK_INTERVAL = 5 * 60  # 5 minutes in seconds
 
 def initialize_firebase():
-    cred = credentials.Certificate(SERVICE_ACCOUNT_KEY_PATH)
-    firebase_admin.initialize_app(cred)
-    return firestore.client()
+    try:
+        if not firebase_admin._apps:
+            cred = credentials.Certificate(SERVICE_ACCOUNT_KEY_PATH)
+            firebase_admin.initialize_app(cred)
+            print(f"[INFO] Firebase initialized successfully.")
+        else:
+            print(f"[INFO] Firebase already initialized.")
+        return firestore.client()
+    except Exception as e:
+        print(f"[ERROR] Firebase initialization failed: {e}")
+        raise
 
 def upload_status_to_firestore(db, status_data, timestamp_key, collection=FIRESTORE_COLLECTION_5MIN):
-    doc_ref = db.collection(collection).document(timestamp_key)
-    doc_ref.set(status_data)
-    print(f"[{datetime.now().isoformat()}] Uploaded status for {timestamp_key} to Firestore collection '{collection}'.")
+    try:
+        print(f"[DEBUG] Preparing to upload to Firestore collection '{collection}' with doc ID '{timestamp_key}'")
+        print(f"[DEBUG] Data: {status_data}")
+        doc_ref = db.collection(collection).document(timestamp_key)
+        doc_ref.set(status_data)
+        print(f"[{datetime.now().isoformat()}] Uploaded status for {timestamp_key} to Firestore collection '{collection}'.")
+    except Exception as e:
+        print(f"[ERROR] Failed to upload to Firestore: {e}")
 
 def get_5min_rounded_timestamp():
     now = datetime.utcnow()
     minute = (now.minute // 5) * 5
     rounded = now.replace(minute=minute, second=0, microsecond=0)
-    return rounded.isoformat()
+    time_str = rounded.strftime("log_%H-%M")
+    return time_str
 
 def load_local_data():
     if os.path.exists(LOCAL_RAW_DATA_PATH):
@@ -189,6 +203,7 @@ def main_loop():
             save_local_data(df)
 
             # Upload 5-min status record to Firestore
+            print(f"[DEBUG] Uploading 5-minute status record at {timestamp_key}...")
             upload_status_to_firestore(db, status_data, timestamp_key)
 
             # Check if time to aggregate 2-hour data
@@ -199,7 +214,9 @@ def main_loop():
                     save_aggregates(agg_df)
                     # Upload aggregates to Firestore under 'Hydro Records'
                     for _, row in agg_df.iterrows():
-                        upload_status_to_firestore(db, row.to_dict(), row['timestamp'], collection='Hydro Records')
+                        agg_doc_id = row['timestamp'].strftime("log_%Y-%m-%d_%H-%M")
+                        print(f"[DEBUG] Uploading aggregate record at {row['timestamp']} to 'Hydro Records'")
+                        upload_status_to_firestore(db, row.to_dict(), agg_doc_id, collection='Hydro Records')
                 last_aggregate_time = now
 
             # Sleep until next 5-minute mark

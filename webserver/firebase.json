@@ -34,10 +34,14 @@
       "**/node_modules/**"
     ],
     "rewrites": [
-      {
-        "source": "**",
-        "destination": "/index.html"
-      }
-    ]
+  {
+    "source": "/api/**",
+    "function": "default"
+  },
+  {
+    "source": "**",
+    "destination": "/index.html"
+  }
+]
   }
 }

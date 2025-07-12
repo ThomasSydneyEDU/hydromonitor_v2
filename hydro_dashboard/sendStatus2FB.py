@@ -107,6 +107,15 @@ def append_new_record(df, status_data):
         if key in status_data:
             status_data.pop(key)
 
+    # Convert sensor string fields to float or None
+    for key in ['Air Temp (Indoor)', 'Air Temp (Outdoor)', 'Humidity (Indoor)', 'Humidity (Outdoor)',
+                'Water Temp Top', 'Water Temp Bottom']:
+        if key in status_data:
+            try:
+                status_data[key] = float(status_data[key].strip())
+            except Exception:
+                status_data[key] = None
+
     # Remove keys not meant for dataframe
     for skip_key in ['data', 'note']:
         if skip_key in status_data:

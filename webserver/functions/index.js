@@ -57,6 +57,8 @@ exports.getHistory = functions.https.onRequest((req, res) => {
           air_temp_outdoor: data.air_temp_outdoor,
           humidity_indoor: data.humidity_indoor,
           humidity_outdoor: data.humidity_outdoor,
+          water_temp_top: data.water_temp_top,
+          water_temp_bottom: data.water_temp_bottom,
         };
       });
 

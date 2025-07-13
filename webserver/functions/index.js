@@ -26,7 +26,7 @@ exports.getStatus = functions.https.onRequest((req, res) => {
       }
 
       const rawData = snapshot.docs[0].data();
-      const data = { ...rawData };
+      const data = {...rawData};
 
       res.json(data);
     } catch (error) {
@@ -52,7 +52,7 @@ exports.getHistory = functions.https.onRequest((req, res) => {
       const history = snapshot.docs.map((doc) => {
         const data = doc.data();
         return {
-          timestamp: data.timestamp_local ?? null,
+          timestamp: data.timestamp_local ? data.timestamp_local : null,
           air_temp_indoor: data.air_temp_indoor,
           air_temp_outdoor: data.air_temp_outdoor,
           humidity_indoor: data.humidity_indoor,

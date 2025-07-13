@@ -107,14 +107,16 @@
 
             <div class="sensor sensor-group">
               <h2>Water</h2>
-              <p>Water Temp Top: <span style="color: ${data.water_temp_top < 15 || data.water_temp_top > 25 ? 'red' : 'inherit'}">${data.water_temp_top ?? 'N/A'}</span> °C</p>
-              <p>Water Temp Bottom: <span style="color: ${data.water_temp_bottom < 15 || data.water_temp_bottom > 25 ? 'red' : 'inherit'}">${data.water_temp_bottom ?? 'N/A'}</span> °C</p>
+              <p><strong>Top</strong></p>
+              <p>Temp: <span style="color: ${data.water_temp_top < 15 || data.water_temp_top > 25 ? 'red' : 'inherit'}">${data.water_temp_top ?? 'N/A'}</span> °C</p>
+              <p>Level: ${data.top_float_low == 1 ? 'Low' : 'Okay'}</p>
+              <p><strong>Bottom</strong></p>
+              <p>Temp: <span style="color: ${data.water_temp_bottom < 15 || data.water_temp_bottom > 25 ? 'red' : 'inherit'}">${data.water_temp_bottom ?? 'N/A'}</span> °C</p>
+              <p>Level: ${data.bottom_float_low == 1 ? 'Low' : 'Okay'}</p>
             </div>
 
             <div class="sensor sensor-group">
               <h2>System</h2>
-              <p>Top Float: ${data.top_float_low == 1 ? 'Low' : 'Okay'}</p>
-              <p>Bottom Float: ${data.bottom_float_low == 1 ? 'Low' : 'Okay'}</p>
               <p>Relay Fan Circ: ${data.relay_fan_circ == 1 ? 'ON' : 'OFF'}</p>
               <p>Relay Fan Vent: ${data.relay_fan_vent == 1 ? 'ON' : 'OFF'}</p>
               <p>Relay Heater: ${data.relay_heater == 1 ? 'ON' : 'OFF'}</p>

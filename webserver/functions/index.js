@@ -53,10 +53,10 @@ exports.getHistory = functions.https.onRequest((req, res) => {
         const data = doc.data();
         return {
           timestamp: data.timestamp_local ?? null,
-          "Air Temp (Indoor)": data["Air Temp (Indoor)"],
-          "Air Temp (Outdoor)": data["Air Temp (Outdoor)"],
-          "Humidity (Indoor)": data["Humidity (Indoor)"],
-          "Humidity (Outdoor)": data["Humidity (Outdoor)"],
+          air_temp_indoor: data.air_temp_indoor,
+          air_temp_outdoor: data.air_temp_outdoor,
+          humidity_indoor: data.humidity_indoor,
+          humidity_outdoor: data.humidity_outdoor,
         };
       });
 

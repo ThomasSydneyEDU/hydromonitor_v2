@@ -61,7 +61,8 @@ exports.getHistory = functions.https.onRequest((req, res) => {
           timestamp:
             data.timestamp ? data.timestamp : null,
           timestamp_local:
-            data.timestamp_local !== undefined && data.timestamp_local !== null ?
+            data.timestamp_local !== undefined &&
+            data.timestamp_local !== null ?
             data.timestamp_local :
             null,
           air_temp_indoor:

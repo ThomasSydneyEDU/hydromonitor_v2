@@ -59,10 +59,10 @@
           const statusDiv = document.getElementById('status');
           statusDiv.innerHTML = `
             <div class="sensor"><span class="label">Timestamp:</span> ${timestamp}</div>
-            <div class="sensor"><span class="label">Air Temp (Indoor):</span> ${data["Air Temp (Indoor)"] || 'N/A'} °C</div>
-            <div class="sensor"><span class="label">Air Temp (Outdoor):</span> ${data["Air Temp (Outdoor)"] || 'N/A'} °C</div>
-            <div class="sensor"><span class="label">Humidity (Indoor):</span> ${data["Humidity (Indoor)"] || 'N/A'} %</div>
-            <div class="sensor"><span class="label">Humidity (Outdoor):</span> ${data["Humidity (Outdoor)"] || 'N/A'} %</div>
+            <div class="sensor"><span class="label">Air Temp (Indoor):</span> ${data.air_temp_indoor ?? 'N/A'} °C</div>
+            <div class="sensor"><span class="label">Air Temp (Outdoor):</span> ${data.air_temp_outdoor ?? 'N/A'} °C</div>
+            <div class="sensor"><span class="label">Humidity (Indoor):</span> ${data.humidity_indoor ?? 'N/A'} %</div>
+            <div class="sensor"><span class="label">Humidity (Outdoor):</span> ${data.humidity_outdoor ?? 'N/A'} %</div>
             <div class="sensor"><span class="label">Water Temp Top:</span> ${data["Water Temp Top"] || 'N/A'} °C</div>
             <div class="sensor"><span class="label">Water Temp Bottom:</span> ${data["Water Temp Bottom"] || 'N/A'} °C</div>
             <div class="sensor"><span class="label">Top Float:</span> ${data.top_float_low == 1 ? 'Low' : 'Okay'}</div>
@@ -154,10 +154,10 @@
             .map(d => new Date(d.timestamp))
             .filter(d => !isNaN(d));
 
-          const airTempIndoor = filteredData.map(d => parseFloat(d["Air Temp (Indoor)"]) || null);
-          const airTempOutdoor = filteredData.map(d => parseFloat(d["Air Temp (Outdoor)"]) || null);
-          const humidIndoor = filteredData.map(d => parseFloat(d["Humidity (Indoor)"]) || null);
-          const humidOutdoor = filteredData.map(d => parseFloat(d["Humidity (Outdoor)"]) || null);
+          const airTempIndoor = filteredData.map(d => parseFloat(d.air_temp_indoor) || null);
+          const airTempOutdoor = filteredData.map(d => parseFloat(d.air_temp_outdoor) || null);
+          const humidIndoor = filteredData.map(d => parseFloat(d.humidity_indoor) || null);
+          const humidOutdoor = filteredData.map(d => parseFloat(d.humidity_outdoor) || null);
 
           tempChart.data.labels = labels;
           tempChart.data.datasets[0].data = airTempIndoor;

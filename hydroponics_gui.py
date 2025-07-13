@@ -496,29 +496,29 @@ class HydroponicsGUI:
             with open("arduino_log.txt", "a") as log_file:
                 log_file.write(f"{datetime.now().isoformat()} - SENSOR: {response}\n")
 
-            # Log sensor data to CSV
-            sensor_log_path = os.path.join("hydro_dashboard", "sensor_log.csv")
-            sensor_headers = [
-                "timestamp",
-                "air_temp_indoor", "humidity_indoor",
-                "air_temp_outdoor", "humidity_outdoor",
-                "water_temp_top", "water_temp_bottom",
-                "float_top", "float_bottom"
-            ]
-            sensor_row = [
-                datetime.now().isoformat(),
-                temp_indoor, humid_indoor,
-                temp_outdoor, humid_outdoor,
-                water_temp1, water_temp2,
-                float_top, float_bottom
-            ]
-            file_exists = os.path.exists(sensor_log_path)
-            os.makedirs(os.path.dirname(sensor_log_path), exist_ok=True)
-            with open(sensor_log_path, "a", newline="") as f:
-                writer = csv.writer(f)
-                if not file_exists or os.path.getsize(sensor_log_path) == 0:
-                    writer.writerow(sensor_headers)
-                writer.writerow(sensor_row)
+            // TEMPORARILY DISABLED CSV LOGGING
+            # sensor_log_path = os.path.join("hydro_dashboard", "sensor_log.csv")
+            # sensor_headers = [
+            #     "timestamp",
+            #     "air_temp_indoor", "humidity_indoor",
+            #     "air_temp_outdoor", "humidity_outdoor",
+            #     "water_temp_top", "water_temp_bottom",
+            #     "float_top", "float_bottom"
+            # ]
+            # sensor_row = [
+            #     datetime.now().isoformat(),
+            #     temp_indoor, humid_indoor,
+            #     temp_outdoor, humid_outdoor,
+            #     water_temp1, water_temp2,
+            #     float_top, float_bottom
+            # ]
+            # file_exists = os.path.exists(sensor_log_path)
+            # os.makedirs(os.path.dirname(sensor_log_path), exist_ok=True)
+            # with open(sensor_log_path, "a", newline="") as f:
+            #     writer = csv.writer(f)
+            #     if not file_exists or os.path.getsize(sensor_log_path) == 0:
+            #         writer.writerow(sensor_headers)
+            #     writer.writerow(sensor_row)
 
         except Exception as e:
             print(f"⚠ Error parsing sensor state: {e}")

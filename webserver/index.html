@@ -38,6 +38,15 @@
       height: 300px;
       margin-bottom: 2rem;
     }
+    .sensor-group {
+      margin-bottom: 2rem;
+    }
+    .sensor-group h2 {
+      margin-top: 1rem;
+      margin-bottom: 0.5rem;
+      font-size: 1.25rem;
+      color: #34495e;
+    }
   </style>
 </head>
 <body>
@@ -83,21 +92,29 @@
           const statusDiv = document.getElementById('status');
           statusDiv.innerHTML = `
             <div class="sensor"><span class="label">Last reading:</span> ${timestamp}</div>
-            <div class="sensor"><span class="label">Air Temp (Indoor):</span> ${data.air_temp_indoor ?? 'N/A'} °C</div>
-            <div class="sensor"><span class="label">Air Temp (Outdoor):</span> ${data.air_temp_outdoor ?? 'N/A'} °C</div>
-            <div class="sensor"><span class="label">Humidity (Indoor):</span> ${data.humidity_indoor ?? 'N/A'} %</div>
-            <div class="sensor"><span class="label">Humidity (Outdoor):</span> ${data.humidity_outdoor ?? 'N/A'} %</div>
-            <div class="sensor"><span class="label">Water Temp Top:</span> ${data.water_temp_top ?? 'N/A'} °C</div>
-            <div class="sensor"><span class="label">Water Temp Bottom:</span> ${data.water_temp_bottom ?? 'N/A'} °C</div>
-            <div class="sensor"><span class="label">Top Float:</span> ${data.top_float_low == 1 ? 'Low' : 'Okay'}</div>
-            <div class="sensor"><span class="label">Bottom Float:</span> ${data.bottom_float_low == 1 ? 'Low' : 'Okay'}</div>
-            <div class="sensor"><span class="label">Relay Fan Circ:</span> ${data.relay_fan_circ == 1 ? 'ON' : 'OFF'}</div>
-            <div class="sensor"><span class="label">Relay Fan Vent:</span> ${data.relay_fan_vent == 1 ? 'ON' : 'OFF'}</div>
-            <div class="sensor"><span class="label">Relay Heater:</span> ${data.relay_heater == 1 ? 'ON' : 'OFF'}</div>
-            <div class="sensor"><span class="label">Relay Lights Bottom:</span> ${data.relay_lights_bottom == 1 ? 'ON' : 'OFF'}</div>
-            <div class="sensor"><span class="label">Relay Lights Top:</span> ${data.relay_lights_top == 1 ? 'ON' : 'OFF'}</div>
-            <div class="sensor"><span class="label">Relay Pump Bottom:</span> ${data.relay_pump_bottom == 1 ? 'ON' : 'OFF'}</div>
-            <div class="sensor"><span class="label">Relay Pump Top:</span> ${data.relay_pump_top == 1 ? 'ON' : 'OFF'}</div>
+
+            <div class="sensor-group">
+              <h2>Environment</h2>
+              <div class="sensor"><span class="label">Air Temp (Indoor):</span> ${data.air_temp_indoor ?? 'N/A'} °C</div>
+              <div class="sensor"><span class="label">Air Temp (Outdoor):</span> ${data.air_temp_outdoor ?? 'N/A'} °C</div>
+              <div class="sensor"><span class="label">Humidity (Indoor):</span> ${data.humidity_indoor ?? 'N/A'} %</div>
+              <div class="sensor"><span class="label">Humidity (Outdoor):</span> ${data.humidity_outdoor ?? 'N/A'} %</div>
+              <div class="sensor"><span class="label">Water Temp Top:</span> ${data.water_temp_top ?? 'N/A'} °C</div>
+              <div class="sensor"><span class="label">Water Temp Bottom:</span> ${data.water_temp_bottom ?? 'N/A'} °C</div>
+            </div>
+
+            <div class="sensor-group">
+              <h2>System</h2>
+              <div class="sensor"><span class="label">Top Float:</span> ${data.top_float_low == 1 ? 'Low' : 'Okay'}</div>
+              <div class="sensor"><span class="label">Bottom Float:</span> ${data.bottom_float_low == 1 ? 'Low' : 'Okay'}</div>
+              <div class="sensor"><span class="label">Relay Fan Circ:</span> ${data.relay_fan_circ == 1 ? 'ON' : 'OFF'}</div>
+              <div class="sensor"><span class="label">Relay Fan Vent:</span> ${data.relay_fan_vent == 1 ? 'ON' : 'OFF'}</div>
+              <div class="sensor"><span class="label">Relay Heater:</span> ${data.relay_heater == 1 ? 'ON' : 'OFF'}</div>
+              <div class="sensor"><span class="label">Relay Lights Bottom:</span> ${data.relay_lights_bottom == 1 ? 'ON' : 'OFF'}</div>
+              <div class="sensor"><span class="label">Relay Lights Top:</span> ${data.relay_lights_top == 1 ? 'ON' : 'OFF'}</div>
+              <div class="sensor"><span class="label">Relay Pump Bottom:</span> ${data.relay_pump_bottom == 1 ? 'ON' : 'OFF'}</div>
+              <div class="sensor"><span class="label">Relay Pump Top:</span> ${data.relay_pump_top == 1 ? 'ON' : 'OFF'}</div>
+            </div>
           `;
         } catch (error) {
           document.getElementById('status').innerText = 'Error loading data: ' + error;

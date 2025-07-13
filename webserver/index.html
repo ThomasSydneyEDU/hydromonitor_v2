@@ -52,8 +52,17 @@
           const data = await response.json();
           console.log('Status data:', data);
 
-          const timestamp = data.timestamp
-            ? new Date(data.timestamp).toLocaleString()
+          const timestamp = data.timestamp_local
+            ? new Date(data.timestamp_local).toLocaleString('en-AU', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false,
+                timeZoneName: 'short',
+              })
             : 'N/A';
 
           const statusDiv = document.getElementById('status');
@@ -149,9 +158,9 @@
           const data = await response.json();
           console.log('History data:', data);
 
-          const filteredData = data.filter(d => d.timestamp);
+          const filteredData = data.filter(d => d.timestamp_local);
           const labels = filteredData
-            .map(d => new Date(d.timestamp))
+            .map(d => new Date(d.timestamp_local))
             .filter(d => !isNaN(d));
 
           const airTempIndoor = filteredData.map(d => parseFloat(d.air_temp_indoor) || null);

@@ -30,7 +30,10 @@ exports.getStatus = functions.https.onRequest((req, res) => {
 
       res.json({
         ...data,
-        timestamp_local: data.timestamp_local !== undefined && data.timestamp_local !== null ? data.timestamp_local : null,
+        timestamp_local:
+          data.timestamp_local !== undefined && data.timestamp_local !== null
+            ? data.timestamp_local
+            : null,
       });
     } catch (error) {
       res.status(500).json({error: error.message});
@@ -56,7 +59,10 @@ exports.getHistory = functions.https.onRequest((req, res) => {
         const data = doc.data();
         return {
           timestamp: data.timestamp ? data.timestamp : null,
-          timestamp_local: data.timestamp_local !== undefined && data.timestamp_local !== null ? data.timestamp_local : null,
+          timestamp_local:
+            data.timestamp_local !== undefined && data.timestamp_local !== null
+              ? data.timestamp_local
+              : null,
           air_temp_indoor: data.air_temp_indoor,
           air_temp_outdoor: data.air_temp_outdoor,
           humidity_indoor: data.humidity_indoor,

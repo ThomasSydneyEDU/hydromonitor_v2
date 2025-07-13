@@ -46,6 +46,17 @@
       margin-bottom: 0.5rem;
       font-size: 1.25rem;
       color: #34495e;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    @media (max-width: 768px) {
+      .container {
+        flex-direction: column;
+      }
+      canvas {
+        height: 250px;
+      }
     }
   </style>
 </head>
@@ -54,8 +65,11 @@
   <div class="container">
     <div id="status">Loading current data...</div>
     <div id="charts">
-      <canvas id="tempChart" width="500" height="250"></canvas>
-      <canvas id="humidityChart" width="500" height="250"></canvas>
+      <div class="sensor sensor-group">
+        <h2>Today's Environment</h2>
+        <canvas id="tempChart" width="500" height="250"></canvas>
+        <canvas id="humidityChart" width="500" height="250"></canvas>
+      </div>
     </div>
   </div>
 
@@ -94,19 +108,19 @@
             <div class="sensor"><span class="label">Last reading:</span> ${timestamp}</div>
 
             <div class="sensor sensor-group">
-              <h2>Environment - Indoor</h2>
+              <h2 style="background-color: #e8f5e9; padding: 0.5rem; border-radius: 4px;">🌡️ Environment - Indoor</h2>
               <p>Air Temp: <span style="color: ${data.air_temp_indoor < 10 || data.air_temp_indoor > 30 ? 'red' : 'inherit'}">${data.air_temp_indoor ?? 'N/A'}</span> °C</p>
               <p>Humidity: <span style="color: ${data.humidity_indoor < 30 || data.humidity_indoor > 70 ? 'red' : 'inherit'}">${data.humidity_indoor ?? 'N/A'}</span> %</p>
             </div>
 
             <div class="sensor sensor-group">
-              <h2>Environment - Outdoor</h2>
+              <h2 style="background-color: #e8f5e9; padding: 0.5rem; border-radius: 4px;">🌤️ Environment - Outdoor</h2>
               <p>Air Temp: <span style="color: ${data.air_temp_outdoor < 10 || data.air_temp_outdoor > 30 ? 'red' : 'inherit'}">${data.air_temp_outdoor ?? 'N/A'}</span> °C</p>
               <p>Humidity: <span style="color: ${data.humidity_outdoor < 30 || data.humidity_outdoor > 70 ? 'red' : 'inherit'}">${data.humidity_outdoor ?? 'N/A'}</span> %</p>
             </div>
 
             <div class="sensor sensor-group">
-              <h2>Water</h2>
+              <h2 style="background-color: #e3f2fd; padding: 0.5rem; border-radius: 4px;">💧 Water</h2>
               <p><strong>Top</strong></p>
               <p>Temp: <span style="color: ${data.water_temp_top < 15 || data.water_temp_top > 25 ? 'red' : 'inherit'}">${data.water_temp_top ?? 'N/A'}</span> °C</p>
               <p>Level: ${data.top_float_low == 1 ? 'Low' : 'Okay'}</p>
@@ -116,7 +130,7 @@
             </div>
 
             <div class="sensor sensor-group">
-              <h2>System</h2>
+              <h2 style="background-color: #f3e5f5; padding: 0.5rem; border-radius: 4px;">🔧 System</h2>
               <p>Relay Fan Circ: ${data.relay_fan_circ == 1 ? 'ON' : 'OFF'}</p>
               <p>Relay Fan Vent: ${data.relay_fan_vent == 1 ? 'ON' : 'OFF'}</p>
               <p>Relay Heater: ${data.relay_heater == 1 ? 'ON' : 'OFF'}</p>

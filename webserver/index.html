@@ -4,8 +4,17 @@
   <meta charset="UTF-8" />
   <title>Hydroponics Dashboard</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 2rem; }
-    h1 { margin-bottom: 1rem; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f4f6f8;
+      color: #333;
+      margin: 2rem;
+    }
+    h1 {
+      color: #2c3e50;
+      font-size: 2rem;
+      margin-bottom: 1rem;
+    }
     .container {
       display: flex;
       gap: 2rem;
@@ -16,7 +25,13 @@
     #charts {
       flex: 2;
     }
-    .sensor { margin-bottom: 1rem; }
+    .sensor {
+      background: #fff;
+      padding: 1rem;
+      border-radius: 6px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+      margin-bottom: 1rem;
+    }
     .label { font-weight: bold; }
     canvas {
       max-width: 100%;
@@ -30,8 +45,8 @@
   <div class="container">
     <div id="status">Loading current data...</div>
     <div id="charts">
-      <canvas id="tempChart" width="600" height="300"></canvas>
-      <canvas id="humidityChart" width="600" height="300"></canvas>
+      <canvas id="tempChart" width="500" height="250"></canvas>
+      <canvas id="humidityChart" width="500" height="250"></canvas>
     </div>
   </div>
 
@@ -67,7 +82,7 @@
 
           const statusDiv = document.getElementById('status');
           statusDiv.innerHTML = `
-            <div class="sensor"><span class="label">Timestamp:</span> ${timestamp}</div>
+            <div class="sensor"><span class="label">Last reading:</span> ${timestamp}</div>
             <div class="sensor"><span class="label">Air Temp (Indoor):</span> ${data.air_temp_indoor ?? 'N/A'} °C</div>
             <div class="sensor"><span class="label">Air Temp (Outdoor):</span> ${data.air_temp_outdoor ?? 'N/A'} °C</div>
             <div class="sensor"><span class="label">Humidity (Indoor):</span> ${data.humidity_indoor ?? 'N/A'} %</div>
@@ -104,6 +119,16 @@
           },
           options: {
             responsive: true,
+            plugins: {
+              legend: {
+                position: 'top',
+                align: 'start',
+                labels: {
+                  boxWidth: 12,
+                  padding: 8
+                }
+              }
+            },
             scales: {
               x: {
                 type: 'time',
@@ -114,7 +139,7 @@
                 }
               },
               y: {
-                title: { display: true, text: '°C' }
+                title: { display: true, text: 'Temp (°C)' }
               }
             }
           }
@@ -132,6 +157,16 @@
           },
           options: {
             responsive: true,
+            plugins: {
+              legend: {
+                position: 'top',
+                align: 'start',
+                labels: {
+                  boxWidth: 12,
+                  padding: 8
+                }
+              }
+            },
             scales: {
               x: {
                 type: 'time',
@@ -142,7 +177,7 @@
                 }
               },
               y: {
-                title: { display: true, text: '%' },
+                title: { display: true, text: 'Humidity (%)' },
                 min: 0,
                 max: 100
               }

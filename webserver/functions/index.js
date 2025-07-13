@@ -26,13 +26,7 @@ exports.getStatus = functions.https.onRequest((req, res) => {
       }
 
       const rawData = snapshot.docs[0].data();
-      const data = {
-        ...rawData,
-        "Air Temp (Indoor)": Number(rawData["Air Temp (Indoor)"]),
-        "Air Temp (Outdoor)": Number(rawData["Air Temp (Outdoor)"]),
-        "Humidity (Indoor)": Number(rawData["Humidity (Indoor)"]),
-        "Humidity (Outdoor)": Number(rawData["Humidity (Outdoor)"]),
-      };
+      const data = { ...rawData };
 
       res.json(data);
     } catch (error) {
@@ -58,13 +52,11 @@ exports.getHistory = functions.https.onRequest((req, res) => {
       const history = snapshot.docs.map((doc) => {
         const data = doc.data();
         return {
-          "timestamp": data.timestamp ?
-            data.timestamp.toDate().toISOString() :
-            null,
-          "Air Temp (Indoor)": Number(data["Air Temp (Indoor)"]),
-          "Air Temp (Outdoor)": Number(data["Air Temp (Outdoor)"]),
-          "Humidity (Indoor)": Number(data["Humidity (Indoor)"]),
-          "Humidity (Outdoor)": Number(data["Humidity (Outdoor)"]),
+          timestamp: data.timestamp_local ?? null,
+          "Air Temp (Indoor)": data["Air Temp (Indoor)"],
+          "Air Temp (Outdoor)": data["Air Temp (Outdoor)"],
+          "Humidity (Indoor)": data["Humidity (Indoor)"],
+          "Humidity (Outdoor)": data["Humidity (Outdoor)"],
         };
       });
 

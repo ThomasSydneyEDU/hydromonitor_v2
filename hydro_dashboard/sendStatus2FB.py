@@ -119,14 +119,28 @@ def append_new_record(df, status_data):
         if key in status_data:
             status_data.pop(key)
 
+
     # Convert sensor string fields to float or None
     for key in ['Air Temp (Indoor)', 'Air Temp (Outdoor)', 'Humidity (Indoor)', 'Humidity (Outdoor)',
                 'Water Temp Top', 'Water Temp Bottom']:
         if key in status_data:
             try:
-                status_data[key] = float(status_data[key].strip())
+                status_data[key] = float(str(status_data[key]).strip())
             except Exception:
                 status_data[key] = None
+
+    # Rename sensor keys to match expected DataFrame columns
+    sensor_rename_map = {
+        'Air Temp (Indoor)': 'air_temp_indoor',
+        'Air Temp (Outdoor)': 'air_temp_outdoor',
+        'Humidity (Indoor)': 'humidity_indoor',
+        'Humidity (Outdoor)': 'humidity_outdoor',
+        'Water Temp Top': 'water_temp_top',
+        'Water Temp Bottom': 'water_temp_bottom'
+    }
+    for old_key, new_key in sensor_rename_map.items():
+        if old_key in status_data:
+            status_data[new_key] = status_data.pop(old_key)
 
     # Remove keys not meant for dataframe
     for skip_key in ['data', 'note']:

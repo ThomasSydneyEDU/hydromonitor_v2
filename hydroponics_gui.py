@@ -496,7 +496,7 @@ class HydroponicsGUI:
             with open("arduino_log.txt", "a") as log_file:
                 log_file.write(f"{datetime.now().isoformat()} - SENSOR: {response}\n")
 
-            // TEMPORARILY DISABLED CSV LOGGING
+            # // TEMPORARILY DISABLED CSV LOGGING
             # sensor_log_path = os.path.join("hydro_dashboard", "sensor_log.csv")
             # sensor_headers = [
             #     "timestamp",

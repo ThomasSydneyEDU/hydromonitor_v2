@@ -93,27 +93,35 @@
           statusDiv.innerHTML = `
             <div class="sensor"><span class="label">Last reading:</span> ${timestamp}</div>
 
-            <div class="sensor-group">
-              <h2>Environment</h2>
-              <div class="sensor"><span class="label">Air Temp (Indoor):</span> ${data.air_temp_indoor ?? 'N/A'} °C</div>
-              <div class="sensor"><span class="label">Air Temp (Outdoor):</span> ${data.air_temp_outdoor ?? 'N/A'} °C</div>
-              <div class="sensor"><span class="label">Humidity (Indoor):</span> ${data.humidity_indoor ?? 'N/A'} %</div>
-              <div class="sensor"><span class="label">Humidity (Outdoor):</span> ${data.humidity_outdoor ?? 'N/A'} %</div>
-              <div class="sensor"><span class="label">Water Temp Top:</span> ${data.water_temp_top ?? 'N/A'} °C</div>
-              <div class="sensor"><span class="label">Water Temp Bottom:</span> ${data.water_temp_bottom ?? 'N/A'} °C</div>
+            <div class="sensor sensor-group">
+              <h2>Environment - Indoor</h2>
+              <p>Air Temp: <span style="color: ${data.air_temp_indoor < 10 || data.air_temp_indoor > 30 ? 'red' : 'inherit'}">${data.air_temp_indoor ?? 'N/A'}</span> °C</p>
+              <p>Humidity: <span style="color: ${data.humidity_indoor < 30 || data.humidity_indoor > 70 ? 'red' : 'inherit'}">${data.humidity_indoor ?? 'N/A'}</span> %</p>
             </div>
 
-            <div class="sensor-group">
+            <div class="sensor sensor-group">
+              <h2>Environment - Outdoor</h2>
+              <p>Air Temp: <span style="color: ${data.air_temp_outdoor < 10 || data.air_temp_outdoor > 30 ? 'red' : 'inherit'}">${data.air_temp_outdoor ?? 'N/A'}</span> °C</p>
+              <p>Humidity: <span style="color: ${data.humidity_outdoor < 30 || data.humidity_outdoor > 70 ? 'red' : 'inherit'}">${data.humidity_outdoor ?? 'N/A'}</span> %</p>
+            </div>
+
+            <div class="sensor sensor-group">
+              <h2>Water</h2>
+              <p>Water Temp Top: <span style="color: ${data.water_temp_top < 15 || data.water_temp_top > 25 ? 'red' : 'inherit'}">${data.water_temp_top ?? 'N/A'}</span> °C</p>
+              <p>Water Temp Bottom: <span style="color: ${data.water_temp_bottom < 15 || data.water_temp_bottom > 25 ? 'red' : 'inherit'}">${data.water_temp_bottom ?? 'N/A'}</span> °C</p>
+            </div>
+
+            <div class="sensor sensor-group">
               <h2>System</h2>
-              <div class="sensor"><span class="label">Top Float:</span> ${data.top_float_low == 1 ? 'Low' : 'Okay'}</div>
-              <div class="sensor"><span class="label">Bottom Float:</span> ${data.bottom_float_low == 1 ? 'Low' : 'Okay'}</div>
-              <div class="sensor"><span class="label">Relay Fan Circ:</span> ${data.relay_fan_circ == 1 ? 'ON' : 'OFF'}</div>
-              <div class="sensor"><span class="label">Relay Fan Vent:</span> ${data.relay_fan_vent == 1 ? 'ON' : 'OFF'}</div>
-              <div class="sensor"><span class="label">Relay Heater:</span> ${data.relay_heater == 1 ? 'ON' : 'OFF'}</div>
-              <div class="sensor"><span class="label">Relay Lights Bottom:</span> ${data.relay_lights_bottom == 1 ? 'ON' : 'OFF'}</div>
-              <div class="sensor"><span class="label">Relay Lights Top:</span> ${data.relay_lights_top == 1 ? 'ON' : 'OFF'}</div>
-              <div class="sensor"><span class="label">Relay Pump Bottom:</span> ${data.relay_pump_bottom == 1 ? 'ON' : 'OFF'}</div>
-              <div class="sensor"><span class="label">Relay Pump Top:</span> ${data.relay_pump_top == 1 ? 'ON' : 'OFF'}</div>
+              <p>Top Float: ${data.top_float_low == 1 ? 'Low' : 'Okay'}</p>
+              <p>Bottom Float: ${data.bottom_float_low == 1 ? 'Low' : 'Okay'}</p>
+              <p>Relay Fan Circ: ${data.relay_fan_circ == 1 ? 'ON' : 'OFF'}</p>
+              <p>Relay Fan Vent: ${data.relay_fan_vent == 1 ? 'ON' : 'OFF'}</p>
+              <p>Relay Heater: ${data.relay_heater == 1 ? 'ON' : 'OFF'}</p>
+              <p>Relay Lights Bottom: ${data.relay_lights_bottom == 1 ? 'ON' : 'OFF'}</p>
+              <p>Relay Lights Top: ${data.relay_lights_top == 1 ? 'ON' : 'OFF'}</p>
+              <p>Relay Pump Bottom: ${data.relay_pump_bottom == 1 ? 'ON' : 'OFF'}</p>
+              <p>Relay Pump Top: ${data.relay_pump_top == 1 ? 'ON' : 'OFF'}</p>
             </div>
           `;
         } catch (error) {
@@ -142,7 +150,10 @@
                 align: 'start',
                 labels: {
                   boxWidth: 12,
-                  padding: 8
+                  padding: 8,
+                  font: {
+                    size: 14
+                  }
                 }
               }
             },
@@ -153,10 +164,25 @@
                   tooltipFormat: 'MMM D, h:mm a',
                   unit: 'hour',
                   zone: 'local'
+                },
+                ticks: {
+                  font: {
+                    size: 14
+                  }
+                },
+                title: {
+                  font: {
+                    size: 16
+                  }
                 }
               },
               y: {
-                title: { display: true, text: 'Temp (°C)' }
+                title: { display: true, text: 'Temp (°C)', font: { size: 16 } },
+                ticks: {
+                  font: {
+                    size: 14
+                  }
+                }
               }
             }
           }
@@ -180,7 +206,10 @@
                 align: 'start',
                 labels: {
                   boxWidth: 12,
-                  padding: 8
+                  padding: 8,
+                  font: {
+                    size: 14
+                  }
                 }
               }
             },
@@ -191,12 +220,27 @@
                   tooltipFormat: 'MMM D, h:mm a',
                   unit: 'hour',
                   zone: 'local'
+                },
+                ticks: {
+                  font: {
+                    size: 14
+                  }
+                },
+                title: {
+                  font: {
+                    size: 16
+                  }
                 }
               },
               y: {
-                title: { display: true, text: 'Humidity (%)' },
+                title: { display: true, text: 'Humidity (%)', font: { size: 16 } },
                 min: 0,
-                max: 100
+                max: 100,
+                ticks: {
+                  font: {
+                    size: 14
+                  }
+                }
               }
             }
           }

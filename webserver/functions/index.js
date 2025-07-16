@@ -91,7 +91,7 @@ exports.getImage = functions.https.onRequest((req, res) => {
       return;
     }
 
-    const bucketName = "hydroweb-fe1ae.appspot.com"; // ✅ Correct bucket name
+    const bucketName = 'hydroweb-fe1ae.firebasestorage.app'; // ✅ Correct bucket name
     const filename =
       camera === "top"
         ? "daily-images/TopCamera.jpg"

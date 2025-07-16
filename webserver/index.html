@@ -274,31 +274,23 @@
           const now = DateTime.local();
           const oneDayAgo = now.minus({ hours: 24 });
 
+          // Parse and filter data using timestamp_local
           const filteredData = data
-            .filter(d => d.name && /^log_\d{2}-\d{2}$/.test(d.name)) // validate filename
+            .filter(d => d.timestamp_local)
             .map(d => {
-              const [hour, minute] = d.name.replace('log_', '').split('-').map(Number);
-
-              // Build timestamp using today’s date
-              let dt = DateTime.local().set({ hour, minute, second: 0, millisecond: 0 });
-
-              // If this time is "in the future" (e.g., after midnight), treat it as yesterday
-              if (dt > now) {
-                dt = dt.minus({ days: 1 });
-              }
-
+              const dt = DateTime.fromISO(d.timestamp_local); // preserves +10:00
               return { ...d, parsedTime: dt };
             })
             .filter(d => d.parsedTime >= oneDayAgo);
 
-          // Build chart data arrays
+          // Build chart data
           const labels = filteredData.map(d => d.parsedTime.toJSDate());
           const airTempIndoor = filteredData.map(d => parseFloat(d.air_temp_indoor) || null);
           const airTempOutdoor = filteredData.map(d => parseFloat(d.air_temp_outdoor) || null);
           const humidIndoor = filteredData.map(d => parseFloat(d.humidity_indoor) || null);
           const humidOutdoor = filteredData.map(d => parseFloat(d.humidity_outdoor) || null);
 
-          // Update temp chart
+          // Update temperature chart
           tempChart.data.labels = labels;
           tempChart.data.datasets[0].data = airTempIndoor;
           tempChart.data.datasets[1].data = airTempOutdoor;

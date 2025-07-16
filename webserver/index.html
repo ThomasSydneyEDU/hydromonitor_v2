@@ -65,6 +65,14 @@
   <div class="container">
     <div id="status">Loading current data...</div>
     <div id="charts">
+
+      <!-- 📷 Plant Images Section -->
+      <div class="sensor sensor-group">
+        <h2>📷 Latest Plant Images</h2>
+        <img id="topImage" src="" alt="Top Camera" style="max-width: 100%; border-radius: 6px; margin-bottom: 1rem;" />
+        <img id="bottomImage" src="" alt="Bottom Camera" style="max-width: 100%; border-radius: 6px;" />
+      </div>
+
       <div class="sensor sensor-group">
         <h2>Today's Environment</h2>
         <canvas id="tempChart" width="500" height="250"></canvas>
@@ -82,6 +90,8 @@
     window.onload = () => {
       const STATUS_URL = 'https://us-central1-hydroweb-fe1ae.cloudfunctions.net/getStatus';
       const HISTORY_URL = 'https://us-central1-hydroweb-fe1ae.cloudfunctions.net/getHistory';
+      const IMAGE_URL_TOP = 'https://us-central1-hydroweb-fe1ae.cloudfunctions.net/getImage?camera=top';
+      const IMAGE_URL_BOTTOM = 'https://us-central1-hydroweb-fe1ae.cloudfunctions.net/getImage?camera=bottom';
 
       async function fetchStatus() {
         try {
@@ -274,29 +284,25 @@
           const now = DateTime.local();
           const oneDayAgo = now.minus({ hours: 24 });
 
-          // Parse and filter data using timestamp_local
           const filteredData = data
             .filter(d => d.timestamp_local)
             .map(d => {
-              const dt = DateTime.fromISO(d.timestamp_local); // preserves +10:00
+              const dt = DateTime.fromISO(d.timestamp_local);
               return { ...d, parsedTime: dt };
             })
             .filter(d => d.parsedTime >= oneDayAgo);
 
-          // Build chart data
           const labels = filteredData.map(d => d.parsedTime.toJSDate());
           const airTempIndoor = filteredData.map(d => parseFloat(d.air_temp_indoor) || null);
           const airTempOutdoor = filteredData.map(d => parseFloat(d.air_temp_outdoor) || null);
           const humidIndoor = filteredData.map(d => parseFloat(d.humidity_indoor) || null);
           const humidOutdoor = filteredData.map(d => parseFloat(d.humidity_outdoor) || null);
 
-          // Update temperature chart
           tempChart.data.labels = labels;
           tempChart.data.datasets[0].data = airTempIndoor;
           tempChart.data.datasets[1].data = airTempOutdoor;
           tempChart.update();
 
-          // Update humidity chart
           humidityChart.data.labels = labels;
           humidityChart.data.datasets[0].data = humidIndoor;
           humidityChart.data.datasets[1].data = humidOutdoor;
@@ -310,6 +316,10 @@
       fetchStatus();
       initCharts();
       fetchHistory();
+
+      // Load images
+      document.getElementById('topImage').src = IMAGE_URL_TOP;
+      document.getElementById('bottomImage').src = IMAGE_URL_BOTTOM;
     };
   </script>
 </body>

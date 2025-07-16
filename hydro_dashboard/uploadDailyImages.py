@@ -6,7 +6,8 @@ from firebase_admin import credentials, initialize_app, storage
 
 # --- CONFIGURATION ---
 SERVICE_ACCOUNT_KEY_PATH = '/home/tcar5787/APIkeys/hydrowebkey/serviceAccountKey.json'
-BUCKET_NAME = 'hydroweb-fe1ae.appspot.com'  # Corrected from "gs://..." to bucket ID
+# SERVICE_ACCOUNT_KEY_PATH = '/Users/tcar5787/APIKeys/hydrowebkey/serviceAccountKey.json'
+BUCKET_NAME = 'hydroweb-fe1ae.firebasestorage.app' 
 LOCAL_TOP_IMG = 'TopCamera.jpg'
 LOCAL_BOTTOM_IMG = 'BottomCamera.jpg'
 REMOTE_FOLDER = 'daily-images'

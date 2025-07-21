@@ -24,6 +24,9 @@ today = datetime.datetime.now().strftime("%d-%m-%Y")
 remote_top_name = f'{REMOTE_FOLDER}/TopCamera_{today}.jpg'
 remote_bottom_name = f'{REMOTE_FOLDER}/BottomCamera_{today}.jpg'
 
+overwrite_top_name = f'{REMOTE_FOLDER}/TopCamera.jpg'
+overwrite_bottom_name = f'{REMOTE_FOLDER}/BottomCamera.jpg'
+
 # --- CAPTURE IMAGES ---
 subprocess.run(['fswebcam', '-d', '/dev/video0', LOCAL_TOP_IMG], check=True)
 subprocess.run(['fswebcam', '-d', '/dev/video2', LOCAL_BOTTOM_IMG], check=True)
@@ -37,7 +40,7 @@ def upload_to_firebase(local_path, remote_path):
 upload_to_firebase(LOCAL_TOP_IMG, remote_top_name)
 upload_to_firebase(LOCAL_BOTTOM_IMG, remote_bottom_name)
 
-upload_to_firebase(LOCAL_TOP_IMG, 'BottomCamera.jpg')
-upload_to_firebase(LOCAL_BOTTOM_IMG, 'TopCamera.jpg')
+upload_to_firebase(LOCAL_TOP_IMG, overwrite_top_name)
+upload_to_firebase(LOCAL_BOTTOM_IMG, overwrite_bottom_name)
 
 print('Upload complete.')

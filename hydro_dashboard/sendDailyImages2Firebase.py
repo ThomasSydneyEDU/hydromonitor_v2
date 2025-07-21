@@ -37,4 +37,7 @@ def upload_to_firebase(local_path, remote_path):
 upload_to_firebase(LOCAL_TOP_IMG, remote_top_name)
 upload_to_firebase(LOCAL_BOTTOM_IMG, remote_bottom_name)
 
+upload_to_firebase(LOCAL_TOP_IMG, 'BottomCamera.jpg')
+upload_to_firebase(LOCAL_BOTTOM_IMG, 'TopCamera.jpg')
+
 print('Upload complete.')

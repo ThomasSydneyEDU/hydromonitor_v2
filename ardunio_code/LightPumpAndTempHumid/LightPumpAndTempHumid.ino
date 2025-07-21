@@ -412,10 +412,7 @@ void runSchedule() {
     digitalWrite(RELAY_PUMP_BOTTOM, pumpsState ? LOW : HIGH);
 
     // Circulation fan schedule: ON for 10 minutes every hour — only if heater is OFF
-    if (digitalRead(RELAY_HEATER) == HIGH) {
-        bool circulationFanOn = (minutes % 60 < 10);
-        digitalWrite(RELAY_CIRCULATION_FAN, circulationFanOn ? LOW : HIGH);
-    }
+    digitalWrite(RELAY_CIRCULATION_FAN, LOW);
 
     // Vent fan trigger with timeout and cooldown logic (guard against NaN)
     int currentTemp = dhtIndoor.readTemperature();

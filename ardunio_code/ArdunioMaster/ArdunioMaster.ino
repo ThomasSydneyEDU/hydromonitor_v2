@@ -466,7 +466,7 @@ void runSchedule() {
         // Heater timing enforcement logic
         if (heaterCooldownActive && millis() - heaterCooldownStartTime < heaterCooldownDuration) {
             digitalWrite(RELAY_HEATER, HIGH);  // Enforce cooldown
-            digitalWrite(RELAY_CIRCULATION_FAN, HIGH);
+            // Removed circulation fan toggling here
         } else {
             heaterCooldownActive = false;  // Cooldown expired
 
@@ -475,10 +475,10 @@ void runSchedule() {
                     heaterOnStartTime = millis();  // Mark heater start time
                 }
                 digitalWrite(RELAY_HEATER, LOW);
-                digitalWrite(RELAY_CIRCULATION_FAN, LOW);
+                // Removed circulation fan toggling here
             } else if (indoorTemp >= offThreshold || (digitalRead(RELAY_HEATER) == LOW && millis() - heaterOnStartTime >= heaterMaxOnDuration)) {
                 digitalWrite(RELAY_HEATER, HIGH);
-                digitalWrite(RELAY_CIRCULATION_FAN, HIGH);
+                // Removed circulation fan toggling here
                 if (digitalRead(RELAY_HEATER) == LOW) {
                     heaterCooldownActive = true;
                     heaterCooldownStartTime = millis();
@@ -495,7 +495,7 @@ void runSchedule() {
         // Fail-safe: shut off heater if no valid reading for 30 seconds
         if (millis() - lastValidIndoorTempTime > heaterFailSafeTimeout) {
             digitalWrite(RELAY_HEATER, HIGH);
-            digitalWrite(RELAY_CIRCULATION_FAN, HIGH);
+            // Removed circulation fan toggling here
             Serial.println("⚠ Heater shut off: no valid indoor temp reading for 30s.");
         }
     }

@@ -4,5 +4,8 @@
   },
   "devDependencies": {
     "firebase-tools": "^14.10.1"
+  },
+  "overrides": {
+    "tar": "^7.5.4"
   }
 }
